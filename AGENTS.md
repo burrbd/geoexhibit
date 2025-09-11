@@ -1,19 +1,18 @@
 
 General Programming Principles
 
-- Convential commits (no noise): short, task-level titles; concise bodies.
+- Conventional commits (no noise): short, task-level titles; concise bodies.
   Examples: feat: add analyzer protocol, feat: implement stac writer item builder, fix: s3 key generation, test: publisher happy path.
-  Disallow: “final test…”, “WIP…”, running todo references, ALL-CAPS emphasis, emojis in titles.
+  Disallow: "final test…", "WIP…", running todo references, ALL-CAPS emphasis, emojis in titles.
 - Commit discipline: one unit of code with its matching test per commit; push frequently.
 - Minimalism: prefer less and simpler code; add third-party libs only when they clearly reduce LOC and simplify UX.
-- Pre-commit (required): run pytest, mypy, ruff, black locally before every commit. Include .pre-commit-config.yaml and install steps in README.
+- GitHub Actions CI gate: use ruff for linting, black for formatting, pytest for testing, mypy --strict for type checking. Agent must use GitHub REST/GraphQL API to check latest workflow run; if CI fails, stop, fetch failing job logs, and surface brief diagnosis before any fixes.
 - Badges: add build, coverage, and lint badges to README.
-- CI gate: the agent uses GitHub REST/GraphQL API to check the latest workflow run for the branch/PR; if CI fails, stop, fetch failing job logs, and surface a brief diagnosis in the PR/commit thread before any fixes.
 
 General Python Principles
 
 - Python ≥ 3.11, type hints everywhere; mypy --strict passes.
-- Style: black --check, ruff (incl. import rules).
+- Style: black for formatting, ruff for linting (including import rules).
 - Comments are a code smell: code should be self-documenting through clear naming, good structure, and well-designed interfaces. Only add comments where there is unexpected code that is unavoidable or where there is complexity/decisions that need explanation. Minimal docstrings remain pythonic and acceptable.
 - Tests: pytest, deterministic, I/O isolated with fakes/mocks.
 - Structure: small modules; pure core; dependency injection for side effects (S3, FS, network).
