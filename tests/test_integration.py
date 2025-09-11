@@ -5,14 +5,28 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+
 from geoexhibit.cli import main
 from geoexhibit.config import create_default_config, validate_config
-from geoexhibit.demo_analyzer import create_demo_analyzer
-from geoexhibit.orchestrator import create_publish_plan
-from geoexhibit.pipeline import create_example_features, run_geoexhibit_pipeline
+
+# Try to import heavy dependencies, skip tests if not available
+try:
+    from geoexhibit.demo_analyzer import create_demo_analyzer
+    from geoexhibit.orchestrator import create_publish_plan
+    from geoexhibit.pipeline import create_example_features, run_geoexhibit_pipeline
+
+    HEAVY_DEPS_AVAILABLE = True
+except ImportError as e:
+    HEAVY_DEPS_AVAILABLE = False
+    SKIP_REASON = f"Heavy dependencies not available: {e}"
+
 from click.testing import CliRunner
 
 
+@pytest.mark.skipif(
+    not HEAVY_DEPS_AVAILABLE, reason=SKIP_REASON if not HEAVY_DEPS_AVAILABLE else ""
+)
 def test_end_to_end_local_pipeline():
     """Test complete pipeline execution with local output."""
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -86,6 +100,9 @@ def test_end_to_end_local_pipeline():
             assert "/assets/" in primary_asset["href"]
 
 
+@pytest.mark.skipif(
+    not HEAVY_DEPS_AVAILABLE, reason=SKIP_REASON if not HEAVY_DEPS_AVAILABLE else ""
+)
 @patch("geoexhibit.pipeline.generate_pmtiles_plan")
 def test_orchestrator_integration(mock_pmtiles):
     """Test orchestrator creates valid publish plans."""
@@ -126,6 +143,9 @@ def test_orchestrator_integration(mock_pmtiles):
         plan.validate()  # Should not raise
 
 
+@pytest.mark.skipif(
+    not HEAVY_DEPS_AVAILABLE, reason=SKIP_REASON if not HEAVY_DEPS_AVAILABLE else ""
+)
 def test_cli_integration():
     """Test CLI integration with local output."""
     runner = CliRunner()
@@ -216,6 +236,9 @@ def test_stac_href_enforcement():
     assert not pmtiles_href.startswith("s3://")
 
 
+@pytest.mark.skipif(
+    not HEAVY_DEPS_AVAILABLE, reason=SKIP_REASON if not HEAVY_DEPS_AVAILABLE else ""
+)
 def test_time_provider_integration():
     """Test time provider integration with different configurations."""
     from geoexhibit.declarative_time import DeclarativeTimeProvider
@@ -243,6 +266,9 @@ def test_time_provider_integration():
     assert spans[0].start.day == 15
 
 
+@pytest.mark.skipif(
+    not HEAVY_DEPS_AVAILABLE, reason=SKIP_REASON if not HEAVY_DEPS_AVAILABLE else ""
+)
 def test_analyzer_cog_generation():
     """Test that DemoAnalyzer generates valid COGs."""
     with tempfile.TemporaryDirectory() as temp_dir:
