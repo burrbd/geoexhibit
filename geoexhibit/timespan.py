@@ -10,12 +10,12 @@ class TimeSpan:
     """Represents a time span for analysis."""
     start: datetime
     end: Optional[datetime] = None
-    
+
     @property
     def is_instant(self) -> bool:
         """True if this represents an instant in time."""
         return self.end is None
-    
+
     def to_stac_datetime(self) -> Union[datetime, str]:
         """Convert to STAC-compatible datetime format."""
         if self.is_instant:

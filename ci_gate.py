@@ -18,46 +18,46 @@ def check_latest_workflow_run(
 ) -> Dict[str, Any]:
     """
     Check the status of the latest workflow run for the current branch.
-    
+
     Returns dict with status info including:
     - success: bool
-    - conclusion: str 
+    - conclusion: str
     - html_url: str
     - logs_url: str if failed
     """
     if not token:
         token = get_github_token()
-    
+
     if not token:
         return {
             "error": "No GitHub token available - set GITHUB_TOKEN environment variable"
         }
-    
+
     headers = {
         "Authorization": f"token {token}",
         "Accept": "application/vnd.github.v3+json",
         "X-GitHub-Api-Version": "2022-11-28"
     }
-    
+
     try:
         # Get latest workflow runs
         base_url = f"https://api.github.com/repos/{owner}/{repo}/actions/runs"
         params = urllib.parse.urlencode({"per_page": 1, "status": "completed"})
         url = f"{base_url}?{params}"
-        
+
         req = urllib.request.Request(url, headers=headers)
-        
+
         with urllib.request.urlopen(req) as response:
             if response.status != 200:
                 return {"error": f"GitHub API returned status {response.status}"}
-            
+
             data = json.loads(response.read().decode())
-        
+
         if not data.get("workflow_runs"):
             return {"error": "No workflow runs found"}
-        
+
         latest_run = data["workflow_runs"][0]
-        
+
         result = {
             "success": latest_run["conclusion"] == "success",
             "conclusion": latest_run["conclusion"],
@@ -67,13 +67,13 @@ def check_latest_workflow_run(
             "updated_at": latest_run["updated_at"],
             "head_sha": latest_run["head_sha"]
         }
-        
+
         # If failed, get logs URL
         if not result["success"]:
             result["logs_url"] = latest_run["logs_url"]
-            
+
         return result
-        
+
     except urllib.error.HTTPError as e:
         return {"error": f"GitHub API HTTP error {e.code}: {e.reason}"}
     except urllib.error.URLError as e:
@@ -85,20 +85,20 @@ def check_latest_workflow_run(
 def main():
     """CLI interface for checking CI status."""
     import sys
-    
+
     if len(sys.argv) != 3:
         print("Usage: python ci_gate.py <owner> <repo>")
         print("Example: python ci_gate.py myuser myrepo")
         sys.exit(1)
-    
+
     owner, repo = sys.argv[1], sys.argv[2]
-    
+
     result = check_latest_workflow_run(owner, repo)
-    
+
     if "error" in result:
         print(f"❌ Error: {result['error']}")
         sys.exit(1)
-    
+
     if result["success"]:
         print(f"✅ CI PASSED - Latest workflow run succeeded")
         print(f"   Status: {result['conclusion']}")
