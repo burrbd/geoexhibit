@@ -41,22 +41,60 @@ def run(config_file: Path, local_out: Optional[Path], dry_run: bool) -> None:
         config = load_config(config_file)
         click.echo(f"✅ Loaded configuration from {config_file}")
 
+        # Auto-discover features file
+        features_file = _discover_features_file()
+        if not features_file:
+            click.echo(
+                "❌ No features file found. Create features.json or features.geojson"
+            )
+            sys.exit(1)
+
+        click.echo(f"📥 Using features file: {features_file}")
+
         if dry_run:
             click.echo("🔍 DRY RUN MODE - showing planned actions:")
             click.echo(f"  Project: {config.project_name}")
             click.echo(f"  Collection: {config.collection_id}")
+            click.echo(f"  Features: {features_file}")
             if local_out:
                 click.echo(f"  Output: Local directory {local_out}")
             else:
                 click.echo(f"  Output: S3 bucket {config.s3_bucket}")
-            return
+        else:
+            if local_out:
+                click.echo(f"📁 Using local output directory: {local_out}")
+            else:
+                click.echo(f"☁️  Publishing to S3 bucket: {config.s3_bucket}")
+
+        # Run the actual pipeline
+        from .pipeline import run_geoexhibit_pipeline
+
+        result = run_geoexhibit_pipeline(config, features_file, local_out, dry_run)
+
+        # Display results
+        click.echo("\n🎉 Pipeline completed successfully!")
+        click.echo(f"  Job ID: {result['job_id']}")
+        click.echo(f"  Collection: {result['collection_id']}")
+        click.echo(f"  Items created: {result['item_count']}")
+        click.echo(f"  Features processed: {result['feature_count']}")
+
+        if result.get("pmtiles_generated"):
+            click.echo("  ✅ PMTiles generated")
+        else:
+            click.echo("  ⚠️  PMTiles not generated (tippecanoe required)")
+
+        if not dry_run and result.get("verification_passed"):
+            click.echo("  ✅ Publication verified")
 
         if local_out:
-            click.echo(f"📁 Using local output directory: {local_out}")
+            click.echo(f"  📁 Output location: {local_out}")
         else:
-            click.echo(f"☁️  Publishing to S3 bucket: {config.s3_bucket}")
-
-        click.echo("🚧 Full pipeline implementation in progress...")
+            click.echo(
+                f"  ☁️  Published to: s3://{config.s3_bucket}/jobs/{result['job_id']}/"
+            )
+            click.echo(
+                f"  🗺️  Collection URL: s3://{config.s3_bucket}/jobs/{result['job_id']}/stac/collection.json"
+            )
 
     except Exception as e:
         click.echo(f"❌ Error: {e}", err=True)
@@ -186,6 +224,25 @@ def validate() -> None:
     except Exception as e:
         click.echo(f"❌ Configuration validation failed: {e}", err=True)
         sys.exit(1)
+
+
+def _discover_features_file() -> Optional[Path]:
+    """Auto-discover features file in common locations."""
+    common_names = [
+        "features.json",
+        "features.geojson",
+        "data.json",
+        "data.geojson",
+        "input.json",
+        "input.geojson",
+    ]
+
+    for name in common_names:
+        path = Path(name)
+        if path.exists():
+            return path
+
+    return None
 
 
 if __name__ == "__main__":
