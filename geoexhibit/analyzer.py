@@ -30,7 +30,9 @@ class Analyzer(ABC):
     """Analyzer for generating raster outputs from feature/time combinations."""
 
     @abstractmethod
-    def analyze(self, feature: Dict[str, Any], timespan: TimeSpan) -> AnalyzerOutput:
+    def analyze(
+        self, feature: Dict[str, Any], timespan: TimeSpan
+    ) -> AnalyzerOutput:
         """Analyze a feature at a specific time and return outputs."""
         pass
 

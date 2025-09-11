@@ -30,7 +30,9 @@ def check_latest_workflow_run(
 
     if not token:
         return {
-            "error": "No GitHub token available - set GITHUB_TOKEN environment variable"
+            "error": (
+                "No GitHub token available - set GITHUB_TOKEN environment variable"
+            )
         }
 
     headers = {
