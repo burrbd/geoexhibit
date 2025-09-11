@@ -10,4 +10,6 @@ alwaysApply: true
   Examples: feat: add analyzer protocol, feat: implement stac writer item builder, fix: s3 key generation, test: publisher happy path.
   Disallow: "final test…", "WIP…", running todo references, ALL-CAPS emphasis, emojis in titles.
 - Commit discipline: one unit of code with its matching test per commit; push frequently.
+- Run linters before commit: ALWAYS run black, ruff, mypy locally before committing to catch issues early.
+- Check CI gate every 4 commits: Use GitHub API to verify CI status and address failures immediately.
 - Minimalism: prefer less and simpler code; add third-party libs only when they clearly reduce LOC and simplify UX.

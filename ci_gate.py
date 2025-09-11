@@ -51,7 +51,9 @@ def check_latest_workflow_run(
 
         with urllib.request.urlopen(req) as response:
             if response.status != 200:
-                return {"error": f"GitHub API returned status {response.status}"}
+                return {
+                    "error": f"GitHub API returned status {response.status}"
+                }
 
             data = json.loads(response.read().decode())
 
