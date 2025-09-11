@@ -13,7 +13,9 @@ def get_github_token() -> Optional[str]:
     return os.environ.get('GITHUB_TOKEN')
 
 
-def check_latest_workflow_run(owner: str, repo: str, token: Optional[str] = None) -> Dict[str, Any]:
+def check_latest_workflow_run(
+    owner: str, repo: str, token: Optional[str] = None
+) -> Dict[str, Any]:
     """
     Check the status of the latest workflow run for the current branch.
     
@@ -27,7 +29,9 @@ def check_latest_workflow_run(owner: str, repo: str, token: Optional[str] = None
         token = get_github_token()
     
     if not token:
-        return {"error": "No GitHub token available - set GITHUB_TOKEN environment variable"}
+        return {
+            "error": "No GitHub token available - set GITHUB_TOKEN environment variable"
+        }
     
     headers = {
         "Authorization": f"token {token}",
