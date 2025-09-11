@@ -8,8 +8,8 @@ import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
 import pystac
 
-from .interfaces import Publisher, PublishPlan, PublishItem, GeoExhibitConfig
-from .stac_writer import write_stac_catalog, HrefResolver
+from .interfaces import Publisher, PublishPlan, PublishItem, GeoExhibitConfig, CanonicalLayout
+from .stac_writer import write_stac_catalog
 
 logger = logging.getLogger(__name__)
 
@@ -48,59 +48,43 @@ class S3Publisher(Publisher):
                 raise ValueError(f"Error accessing S3 bucket {self.s3_bucket}: {e}")
     
     def publish_plan(self, plan: PublishPlan) -> None:
-        """
-        Publish the complete plan to S3.
-        
-        Args:
-            plan: PublishPlan with all items and metadata
-        """
         logger.info(f"Publishing plan {plan.job_id} to S3 bucket: {self.s3_bucket}")
         
-        # First, upload all assets
-        self._upload_assets(plan)
+        layout = CanonicalLayout(plan.job_id)
         
-        # Generate and upload STAC catalog
+        self._upload_assets(plan, layout)
+        
         stac_data = write_stac_catalog(plan, self.config)
-        self._upload_stac_catalog(stac_data)
+        self._upload_stac_catalog(stac_data, layout)
         
-        # Upload PMTiles if present
         if plan.pmtiles_path:
-            self._upload_pmtiles(plan)
+            self._upload_pmtiles(plan, layout)
         
         logger.info(f"Successfully published plan {plan.job_id}")
     
-    def _upload_assets(self, plan: PublishPlan) -> None:
-        """Upload all assets for all items in the plan."""
-        href_resolver = HrefResolver(self.config, plan.job_id)
-        
+    def _upload_assets(self, plan: PublishPlan, layout: CanonicalLayout) -> None:
         for item in plan.items:
             logger.info(f"Uploading assets for item {item.item_id}")
             
-            # Upload primary COG asset
             primary_asset = item.analyzer_output.primary_cog_asset
-            s3_key = self._extract_s3_key_from_href(
-                href_resolver.resolve_asset_href(primary_asset, is_cog=True)
-            )
+            s3_key = layout.asset_path(item.item_id, primary_asset.key)
             self._upload_file(primary_asset.href, s3_key, primary_asset.media_type)
             
-            # Upload additional assets
             if item.analyzer_output.additional_assets:
                 for asset in item.analyzer_output.additional_assets:
-                    s3_key = self._extract_s3_key_from_href(
-                        href_resolver.resolve_asset_href(asset, is_cog=False)
-                    )
+                    if "thumbnail" in (asset.roles or []):
+                        s3_key = layout.thumb_path(item.item_id, asset.key)
+                    else:
+                        s3_key = layout.asset_path(item.item_id, asset.key)
                     self._upload_file(asset.href, s3_key, asset.media_type)
     
-    def _upload_stac_catalog(self, stac_data: Dict[str, Any]) -> None:
-        """Upload STAC collection and items to S3."""
-        # Upload collection
+    def _upload_stac_catalog(self, stac_data: Dict[str, Any], layout: CanonicalLayout) -> None:
         collection_path = stac_data["collection"]["path"]
         collection_obj = stac_data["collection"]["object"]
         
         collection_json = json.dumps(collection_obj.to_dict(), indent=2)
         self._upload_content(collection_json, collection_path, "application/json")
         
-        # Upload items
         for item_data in stac_data["items"]:
             item_path = item_data["path"]
             item_obj = item_data["object"]
@@ -110,12 +94,9 @@ class S3Publisher(Publisher):
         
         logger.info(f"Uploaded STAC catalog: 1 collection, {len(stac_data['items'])} items")
     
-    def _upload_pmtiles(self, plan: PublishPlan) -> None:
-        """Upload PMTiles file to S3."""
-        href_resolver = HrefResolver(self.config, plan.job_id)
-        pmtiles_s3_path = href_resolver.resolve_pmtiles_href(plan.pmtiles_path)
+    def _upload_pmtiles(self, plan: PublishPlan, layout: CanonicalLayout) -> None:
+        pmtiles_s3_path = layout.pmtiles_path
         
-        # Assume PMTiles file exists locally and needs to be uploaded
         local_pmtiles_path = Path(plan.pmtiles_path)
         if local_pmtiles_path.exists():
             self._upload_file(str(local_pmtiles_path), pmtiles_s3_path, "application/x-pmtiles")
@@ -179,15 +160,6 @@ class S3Publisher(Publisher):
                 raise ValueError(f"Invalid S3 HREF format: {href}")
     
     def verify_publication(self, plan: PublishPlan) -> bool:
-        """
-        Verify that the plan was published correctly using AWS APIs.
-        
-        Args:
-            plan: PublishPlan that was published
-            
-        Returns:
-            True if verification passes, False otherwise
-        """
         logger.info(f"Verifying publication of plan {plan.job_id}")
         
         if self.dry_run:
@@ -195,19 +167,15 @@ class S3Publisher(Publisher):
             return True
         
         try:
-            # Verify collection JSON
-            collection_verified = self._verify_collection(plan)
+            layout = CanonicalLayout(plan.job_id)
             
-            # Verify all items
-            items_verified = self._verify_items(plan)
+            collection_verified = self._verify_collection(plan, layout)
+            items_verified = self._verify_items(plan, layout)
+            cogs_verified = self._verify_primary_cogs(plan, layout)
             
-            # Verify primary COGs
-            cogs_verified = self._verify_primary_cogs(plan)
-            
-            # Verify PMTiles if present
             pmtiles_verified = True
             if plan.pmtiles_path:
-                pmtiles_verified = self._verify_pmtiles(plan)
+                pmtiles_verified = self._verify_pmtiles(plan, layout)
             
             verification_passed = collection_verified and items_verified and cogs_verified and pmtiles_verified
             
@@ -222,16 +190,13 @@ class S3Publisher(Publisher):
             logger.error(f"Publication verification error: {e}")
             return False
     
-    def _verify_collection(self, plan: PublishPlan) -> bool:
-        """Verify collection JSON exists and is valid."""
-        href_resolver = HrefResolver(self.config, plan.job_id)
-        collection_key = href_resolver.resolve_stac_href(f"{plan.collection_id}.json", "collection")
+    def _verify_collection(self, plan: PublishPlan, layout: CanonicalLayout) -> bool:
+        collection_key = layout.collection_path
         
         try:
             response = self.s3_client.get_object(Bucket=self.s3_bucket, Key=collection_key)
             collection_data = json.loads(response['Body'].read().decode('utf-8'))
             
-            # Validate it's a proper STAC collection
             if collection_data.get('type') != 'Collection':
                 logger.error("Collection JSON missing type=Collection")
                 return False
@@ -247,18 +212,14 @@ class S3Publisher(Publisher):
             logger.error(f"Collection verification failed: {e}")
             return False
     
-    def _verify_items(self, plan: PublishPlan) -> bool:
-        """Verify all item JSONs exist and are valid."""
-        href_resolver = HrefResolver(self.config, plan.job_id)
-        
+    def _verify_items(self, plan: PublishPlan, layout: CanonicalLayout) -> bool:        
         for item in plan.items:
-            item_key = href_resolver.resolve_stac_href(f"{item.item_id}.json", "item")
+            item_key = layout.item_path(item.item_id)
             
             try:
                 response = self.s3_client.get_object(Bucket=self.s3_bucket, Key=item_key)
                 item_data = json.loads(response['Body'].read().decode('utf-8'))
                 
-                # Validate it's a proper STAC item
                 if item_data.get('type') != 'Feature':
                     logger.error(f"Item {item.item_id} JSON missing type=Feature")
                     return False
@@ -267,7 +228,6 @@ class S3Publisher(Publisher):
                     logger.error(f"Item ID mismatch: expected {item.item_id}, got {item_data.get('id')}")
                     return False
                 
-                # Verify primary asset exists
                 assets = item_data.get('assets', {})
                 primary_assets = [
                     asset for asset in assets.values()
@@ -286,18 +246,12 @@ class S3Publisher(Publisher):
         
         return True
     
-    def _verify_primary_cogs(self, plan: PublishPlan) -> bool:
-        """Verify all primary COG files exist in S3."""
-        href_resolver = HrefResolver(self.config, plan.job_id)
-        
+    def _verify_primary_cogs(self, plan: PublishPlan, layout: CanonicalLayout) -> bool:
         for item in plan.items:
             primary_asset = item.analyzer_output.primary_cog_asset
-            cog_s3_key = self._extract_s3_key_from_href(
-                href_resolver.resolve_asset_href(primary_asset, is_cog=True)
-            )
+            cog_s3_key = layout.asset_path(item.item_id, primary_asset.key)
             
             try:
-                # Just check if object exists
                 self.s3_client.head_object(Bucket=self.s3_bucket, Key=cog_s3_key)
                 logger.debug(f"Primary COG verification passed: {cog_s3_key}")
                 
@@ -307,10 +261,8 @@ class S3Publisher(Publisher):
         
         return True
     
-    def _verify_pmtiles(self, plan: PublishPlan) -> bool:
-        """Verify PMTiles file exists in S3."""
-        href_resolver = HrefResolver(self.config, plan.job_id)
-        pmtiles_key = href_resolver.resolve_pmtiles_href(plan.pmtiles_path)
+    def _verify_pmtiles(self, plan: PublishPlan, layout: CanonicalLayout) -> bool:
+        pmtiles_key = layout.pmtiles_path
         
         try:
             self.s3_client.head_object(Bucket=self.s3_bucket, Key=pmtiles_key)
@@ -336,28 +288,17 @@ class LocalPublisher(Publisher):
         self.output_dir.mkdir(parents=True, exist_ok=True)
     
     def publish_plan(self, plan: PublishPlan) -> None:
-        """
-        Publish the complete plan to local filesystem.
-        
-        Args:
-            plan: PublishPlan with all items and metadata
-        """
         logger.info(f"Publishing plan {plan.job_id} to local directory: {self.output_dir}")
         
-        # Create directory structure
-        assets_dir = self.output_dir / "assets"
-        assets_dir.mkdir(exist_ok=True)
+        layout = CanonicalLayout(plan.job_id)
         
-        # Copy assets to local directory
-        self._copy_assets(plan, assets_dir)
+        self._copy_assets(plan, layout)
         
-        # Generate and write STAC catalog
         stac_data = write_stac_catalog(plan, self.config, self.output_dir)
         self._write_stac_files(stac_data)
         
-        # Copy PMTiles if present
         if plan.pmtiles_path:
-            self._copy_pmtiles(plan)
+            self._copy_pmtiles(plan, layout)
         
         logger.info(f"Successfully published plan {plan.job_id} locally")
     
