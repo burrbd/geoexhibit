@@ -17,6 +17,7 @@ class AssetSpec:
     description: Optional[str] = None
     media_type: Optional[str] = None
     roles: Optional[List[str]] = None
+    extra_fields: Optional[Dict[str, Any]] = None
 
 
 @dataclass
