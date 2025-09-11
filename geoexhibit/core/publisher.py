@@ -277,14 +277,16 @@ class S3Publisher(Publisher):
 class LocalPublisher(Publisher):
     """Publisher that writes assets and STAC metadata to local filesystem."""
     
-    def __init__(self, output_dir: Path):
+    def __init__(self, output_dir: Path, config: GeoExhibitConfig):
         """
         Initialize local publisher.
         
         Args:
             output_dir: Directory to write all outputs
+            config: GeoExhibit configuration
         """
         self.output_dir = output_dir
+        self.config = config
         self.output_dir.mkdir(parents=True, exist_ok=True)
     
     def publish_plan(self, plan: PublishPlan) -> None:
@@ -302,29 +304,35 @@ class LocalPublisher(Publisher):
         
         logger.info(f"Successfully published plan {plan.job_id} locally")
     
-    def _copy_assets(self, plan: PublishPlan, assets_dir: Path) -> None:
-        """Copy all assets to local directory."""
+    def _copy_assets(self, plan: PublishPlan, layout: CanonicalLayout) -> None:
+        """Copy all assets to local directory using canonical layout."""
         import shutil
         
         for item in plan.items:
-            # Copy primary COG
             primary_asset = item.analyzer_output.primary_cog_asset
             if Path(primary_asset.href).exists():
-                dest = assets_dir / Path(primary_asset.href).name
+                asset_dir = self.output_dir / layout.asset_path(item.item_id, "").rstrip('/')
+                asset_dir.mkdir(parents=True, exist_ok=True)
+                dest = self.output_dir / layout.asset_path(item.item_id, primary_asset.key)
                 shutil.copy2(primary_asset.href, dest)
                 logger.debug(f"Copied {primary_asset.href} to {dest}")
             
-            # Copy additional assets
             if item.analyzer_output.additional_assets:
                 for asset in item.analyzer_output.additional_assets:
                     if Path(asset.href).exists():
-                        dest = assets_dir / Path(asset.href).name
+                        if "thumbnail" in (asset.roles or []):
+                            thumb_dir = self.output_dir / layout.thumb_path(item.item_id, "").rstrip('/')
+                            thumb_dir.mkdir(parents=True, exist_ok=True)
+                            dest = self.output_dir / layout.thumb_path(item.item_id, asset.key)
+                        else:
+                            asset_dir = self.output_dir / layout.asset_path(item.item_id, "").rstrip('/')
+                            asset_dir.mkdir(parents=True, exist_ok=True)
+                            dest = self.output_dir / layout.asset_path(item.item_id, asset.key)
                         shutil.copy2(asset.href, dest)
                         logger.debug(f"Copied {asset.href} to {dest}")
     
     def _write_stac_files(self, stac_data: Dict[str, Any]) -> None:
         """Write STAC files to local filesystem."""
-        # Collection already has the correct path from write_stac_catalog
         collection_path = Path(stac_data["collection"]["path"])
         collection_obj = stac_data["collection"]["object"]
         
@@ -332,7 +340,6 @@ class LocalPublisher(Publisher):
         with open(collection_path, 'w') as f:
             json.dump(collection_obj.to_dict(), f, indent=2)
         
-        # Items
         for item_data in stac_data["items"]:
             item_path = Path(item_data["path"])
             item_obj = item_data["object"]
@@ -341,16 +348,16 @@ class LocalPublisher(Publisher):
             with open(item_path, 'w') as f:
                 json.dump(item_obj.to_dict(), f, indent=2)
     
-    def _copy_pmtiles(self, plan: PublishPlan) -> None:
+    def _copy_pmtiles(self, plan: PublishPlan, layout: CanonicalLayout) -> None:
         """Copy PMTiles to local directory."""
         import shutil
         
-        pmtiles_dir = self.output_dir / "pmtiles"
-        pmtiles_dir.mkdir(exist_ok=True)
+        pmtiles_dir = self.output_dir / layout.pmtiles_root
+        pmtiles_dir.mkdir(parents=True, exist_ok=True)
         
         source_path = Path(plan.pmtiles_path)
         if source_path.exists():
-            dest_path = pmtiles_dir / source_path.name
+            dest_path = self.output_dir / layout.pmtiles_path
             shutil.copy2(source_path, dest_path)
             logger.debug(f"Copied PMTiles {source_path} to {dest_path}")
     
@@ -358,18 +365,15 @@ class LocalPublisher(Publisher):
         """Verify that files were written correctly to local filesystem."""
         logger.info(f"Verifying local publication of plan {plan.job_id}")
         
-        # Check STAC files exist
-        stac_dir = self.output_dir / "stac"
-        collection_file = stac_dir / "collections" / f"{plan.collection_id}.json"
+        layout = CanonicalLayout(plan.job_id)
         
+        collection_file = self.output_dir / layout.collection_path
         if not collection_file.exists():
             logger.error(f"Collection file not found: {collection_file}")
             return False
         
-        # Check item files
-        items_dir = stac_dir / "items"
         for item in plan.items:
-            item_file = items_dir / f"{item.item_id}.json"
+            item_file = self.output_dir / layout.item_path(item.item_id)
             if not item_file.exists():
                 logger.error(f"Item file not found: {item_file}")
                 return False
