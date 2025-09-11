@@ -46,6 +46,10 @@ def test_cli_run_dry_run():
     try:
         result = runner.invoke(main, ["run", str(config_path), "--dry-run"])
 
+        if result.exit_code != 0:
+            print(f"CLI Output: {result.output}")
+            print(f"CLI Exception: {result.exception}")
+
         assert result.exit_code == 0
         assert "DRY RUN MODE" in result.output
         assert (
@@ -70,6 +74,10 @@ def test_cli_run_local_output():
             result = runner.invoke(
                 main, ["run", str(config_path), "--local-out", temp_dir, "--dry-run"]
             )
+
+            if result.exit_code != 0:
+                print(f"CLI Output: {result.output}")
+                print(f"CLI Exception: {result.exception}")
 
             assert result.exit_code == 0
             assert "Local directory" in result.output

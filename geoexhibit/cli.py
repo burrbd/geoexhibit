@@ -60,14 +60,31 @@ def run(config_file: Path, local_out: Optional[Path], dry_run: bool) -> None:
                 click.echo(f"  Output: Local directory {local_out}")
             else:
                 click.echo(f"  Output: S3 bucket {config.s3_bucket}")
+
+            # In dry-run mode, show what would be done without importing heavy dependencies
+            click.echo("  📊 Would analyze features with DemoAnalyzer")
+            click.echo("  🗺️  Would generate PMTiles (if tippecanoe available)")
+            click.echo("  📝 Would create STAC Collection and Items")
+            if local_out:
+                click.echo(f"  💾 Would copy files to: {local_out}")
+            else:
+                click.echo(
+                    f"  ☁️  Would upload to: s3://{config.s3_bucket}/jobs/<job_id>/"
+                )
+            return
         else:
             if local_out:
                 click.echo(f"📁 Using local output directory: {local_out}")
             else:
                 click.echo(f"☁️  Publishing to S3 bucket: {config.s3_bucket}")
 
-        # Run the actual pipeline
-        from .pipeline import run_geoexhibit_pipeline
+        # Import pipeline only when actually needed (not in dry-run)
+        try:
+            from .pipeline import run_geoexhibit_pipeline
+        except ImportError as e:
+            click.echo(f"❌ Missing dependencies for pipeline execution: {e}")
+            click.echo("💡 Install with: pip install rasterio numpy shapely")
+            sys.exit(1)
 
         result = run_geoexhibit_pipeline(config, features_file, local_out, dry_run)
 
@@ -107,7 +124,7 @@ def features() -> None:
     pass
 
 
-@features.command()
+@features.command("import")
 @click.argument("input_file", type=click.Path(exists=True, path_type=Path))
 @click.option(
     "--output",

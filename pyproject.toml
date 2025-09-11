@@ -67,3 +67,24 @@ testpaths = ["tests"]
 [tool.ruff]
 target-version = "py311"
 line-length = 88
+
+[tool.coverage.run]
+source = ["geoexhibit"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "geoexhibit/demo_analyzer.py",
+    "geoexhibit/orchestrator.py", 
+    "geoexhibit/pipeline.py",
+    "geoexhibit/publisher.py",
+    "geoexhibit/stac_writer.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "except ImportError:",
+]
