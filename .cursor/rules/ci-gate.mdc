@@ -1,0 +1,11 @@
+---
+description: GitHub Actions CI gate requirements
+globs: ["**/*.py", "**/*.yml", "**/*.yaml"]
+alwaysApply: true
+---
+
+# CI Gate Rule
+
+- GitHub Actions CI gate: use ruff for linting, black for formatting, pytest for testing, mypy --strict for type checking. 
+- Agent must use GitHub REST/GraphQL API to check latest workflow run; if CI fails, stop, fetch failing job logs, and surface brief diagnosis before any fixes.
+- Badges: add build, coverage, and lint badges to README.

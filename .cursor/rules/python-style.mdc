@@ -1,0 +1,16 @@
+---
+description: Python coding standards and style requirements
+globs: ["**/*.py"]
+alwaysApply: true
+---
+
+# Python Standards
+
+- Python ≥ 3.11, type hints everywhere; mypy --strict passes.
+- Style: black for formatting, ruff for linting (including import rules).
+- Comments are a code smell: code should be self-documenting through clear naming, good structure, and well-designed interfaces. Only add comments where there is unexpected code that is unavoidable or where there is complexity/decisions that need explanation. Minimal docstrings remain pythonic and acceptable.
+- Tests: pytest, deterministic, I/O isolated with fakes/mocks.
+- Structure: small modules; pure core; dependency injection for side effects (S3, FS, network).
+- Logging: stdlib logging; JSON logs (machine-friendly) with helpful fields.
+- Errors: fail fast; precise exception messages.
+- Docs: module/public API docstrings; examples in README and --help.
