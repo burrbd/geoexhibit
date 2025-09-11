@@ -14,6 +14,7 @@ General Python Principles
 
 - Python ≥ 3.11, type hints everywhere; mypy --strict passes.
 - Style: black --check, ruff (incl. import rules).
+- Comments are a code smell: code should be self-documenting through clear naming, good structure, and well-designed interfaces. Only add comments where there is unexpected code that is unavoidable or where there is complexity/decisions that need explanation. Minimal docstrings remain pythonic and acceptable.
 - Tests: pytest, deterministic, I/O isolated with fakes/mocks.
 - Structure: small modules; pure core; dependency injection for side effects (S3, FS, network).
 - Logging: stdlib logging; JSON logs (machine-friendly) with helpful fields.
