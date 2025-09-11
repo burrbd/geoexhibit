@@ -12,7 +12,7 @@ def load_config(config_path: Path) -> GeoExhibitConfig:
         data = json.load(f)
     
     # Validate required sections
-    required_sections = ["project", "aws", "map", "stac", "ids"]
+    required_sections = ["project", "aws", "map", "stac", "ids", "time"]
     for section in required_sections:
         if section not in data:
             raise ValueError(f"Missing required configuration section: {section}")
@@ -29,22 +29,6 @@ def load_config(config_path: Path) -> GeoExhibitConfig:
     if "s3_bucket" not in aws:
         raise ValueError("Missing required AWS field: s3_bucket")
     
-    # Set default prefixes if not provided
-    default_prefixes = {
-        "stac": "stac/",
-        "collections": "stac/collections/",
-        "items": "stac/items/",
-        "pmtiles": "pmtiles/",
-        "jobs": "jobs/"
-    }
-    if "prefixes" not in aws:
-        aws["prefixes"] = default_prefixes
-    else:
-        # Fill in missing prefixes with defaults
-        for key, value in default_prefixes.items():
-            if key not in aws["prefixes"]:
-                aws["prefixes"][key] = value
-    
     # Validate STAC section defaults
     stac = data["stac"]
     if "use_extensions" not in stac:
@@ -57,12 +41,43 @@ def load_config(config_path: Path) -> GeoExhibitConfig:
     if "strategy" not in ids:
         ids["strategy"] = "ulid"
     
+    # Validate time section
+    time = data["time"]
+    if "mode" not in time:
+        raise ValueError("Missing required time field: mode")
+    
+    if time["mode"] not in ["declarative", "callable"]:
+        raise ValueError("time.mode must be 'declarative' or 'callable'")
+    
+    if time["mode"] == "declarative":
+        if "extractor" not in time:
+            raise ValueError("Declarative time mode requires 'extractor' field")
+        
+        valid_extractors = ["attribute_date", "attribute_interval", "fixed_annual_dates", "from_epoch", "regex_from_string"]
+        if time["extractor"] not in valid_extractors:
+            raise ValueError(f"Invalid extractor: {time['extractor']}. Must be one of: {valid_extractors}")
+        
+        if time["extractor"] in ["attribute_date", "attribute_interval", "regex_from_string"]:
+            if "field" not in time:
+                raise ValueError(f"Extractor {time['extractor']} requires 'field' specification")
+    
+    elif time["mode"] == "callable":
+        if "provider" not in time:
+            raise ValueError("Callable time mode requires 'provider' field")
+    
+    # Set defaults for time config
+    if "format" not in time:
+        time["format"] = "auto"
+    if "tz" not in time:
+        time["tz"] = "UTC"
+    
     return GeoExhibitConfig(
         project=project,
         aws=aws,
         map=data["map"],
         stac=stac,
-        ids=ids
+        ids=ids,
+        time=time
     )
 
 
@@ -76,21 +91,15 @@ def create_default_config() -> Dict[str, Any]:
             "description": "A collection of geospatial analyses"
         },
         "aws": {
-            "s3_bucket": "your-bucket-name",
-            "prefixes": {
-                "stac": "stac/",
-                "collections": "stac/collections/",
-                "items": "stac/items/",
-                "pmtiles": "pmtiles/",
-                "jobs": "jobs/"
-            }
+            "s3_bucket": "your-bucket-name"
         },
         "map": {
             "pmtiles": {
                 "feature_id_property": "feature_id",
                 "minzoom": 5,
                 "maxzoom": 14
-            }
+            },
+            "base_url": ""
         },
         "stac": {
             "use_extensions": ["proj", "raster", "processing"],
@@ -99,6 +108,13 @@ def create_default_config() -> Dict[str, Any]:
         "ids": {
             "strategy": "ulid",
             "prefix": ""
+        },
+        "time": {
+            "mode": "declarative",
+            "extractor": "attribute_date",
+            "field": "properties.date",
+            "format": "auto",
+            "tz": "UTC"
         }
     }
 

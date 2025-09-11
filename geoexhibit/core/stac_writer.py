@@ -11,7 +11,7 @@ from pystac.extensions.processing import ProcessingExtension
 from shapely.geometry import shape
 from ulid import ULID
 
-from .interfaces import PublishPlan, PublishItem, AssetSpec, TimeSpan, GeoExhibitConfig
+from .interfaces import PublishPlan, PublishItem, AssetSpec, TimeSpan, GeoExhibitConfig, CanonicalLayout
 
 logger = logging.getLogger(__name__)
 
