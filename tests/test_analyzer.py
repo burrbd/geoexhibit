@@ -93,3 +93,35 @@ def test_analyzer_interface():
     assert isinstance(result, AnalyzerOutput)
     assert result.primary_cog_asset.key == "mock-cog"
     assert analyzer.name == "mock-analyzer"
+
+
+def test_analyzer_abstract_methods():
+    """Test that Analyzer abstract methods raise TypeError when not implemented."""
+    try:
+        from geoexhibit.analyzer import Analyzer
+
+        # This should fail because analyze() is not implemented
+        class IncompleteAnalyzer(Analyzer):
+            @property
+            def name(self) -> str:
+                return "incomplete"
+
+        IncompleteAnalyzer()
+        assert False, "Should have raised TypeError for missing abstract method"
+    except TypeError:
+        pass  # Expected - abstract method not implemented
+
+    try:
+        # This should fail because name property is not implemented
+        class AnotherIncompleteAnalyzer(Analyzer):
+            def analyze(
+                self, feature: Dict[str, Any], timespan: TimeSpan
+            ) -> AnalyzerOutput:
+                return AnalyzerOutput(
+                    primary_cog_asset=AssetSpec(key="test", href="/test.tif")
+                )
+
+        AnotherIncompleteAnalyzer()
+        assert False, "Should have raised TypeError for missing abstract property"
+    except TypeError:
+        pass  # Expected - abstract property not implemented

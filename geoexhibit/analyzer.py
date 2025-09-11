@@ -27,6 +27,14 @@ class AnalyzerOutput:
     additional_assets: Optional[List[AssetSpec]] = None
     extra_properties: Optional[Dict[str, Any]] = None
 
+    @property
+    def all_assets(self) -> List[AssetSpec]:
+        """Get all assets including primary and additional."""
+        assets = [self.primary_cog_asset]
+        if self.additional_assets:
+            assets.extend(self.additional_assets)
+        return assets
+
 
 class Analyzer(ABC):
     """Analyzer for generating raster outputs from feature/time combinations."""

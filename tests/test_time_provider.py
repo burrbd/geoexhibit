@@ -3,9 +3,19 @@
 from datetime import datetime, timezone
 
 from geoexhibit.time_provider import (
+    TimeProvider,
     ConstantTimeProvider,
     create_time_provider,
 )
+
+
+def test_time_provider_abstract():
+    """Test that TimeProvider cannot be instantiated directly."""
+    try:
+        TimeProvider()
+        assert False, "Should have raised TypeError for abstract class"
+    except TypeError:
+        pass  # Expected - abstract class cannot be instantiated
 
 
 def test_constant_time_provider():
@@ -91,6 +101,63 @@ def test_create_time_provider_missing_module():
     """Test error handling for missing callable module."""
     try:
         create_time_provider("nonexistent.module:some_function")
+        assert False, "Should have raised ValueError"
+    except ValueError as e:
+        assert "Could not import time provider" in str(e)
+
+
+def test_create_time_provider_not_callable():
+    """Test error handling when module attribute is not callable."""
+    try:
+        # Try to use a non-callable attribute
+        create_time_provider("os:name")  # os.name is a string, not callable
+        assert False, "Should have raised ValueError"
+    except ValueError as e:
+        assert "is not callable" in str(e)
+
+
+def test_create_time_provider_wrong_return_type():
+    """Test error handling when callable returns wrong type."""
+
+    # Create a temporary module for testing
+    import tempfile
+    import os
+    import sys
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+        f.write(
+            """
+def bad_provider():
+    return "not a time provider"
+"""
+        )
+        temp_module_path = f.name
+
+    try:
+        # Add temp directory to Python path
+        temp_dir = os.path.dirname(temp_module_path)
+        temp_module_name = os.path.basename(temp_module_path)[:-3]  # Remove .py
+
+        if temp_dir not in sys.path:
+            sys.path.insert(0, temp_dir)
+
+        try:
+            create_time_provider(f"{temp_module_name}:bad_provider")
+            assert False, "Should have raised ValueError for wrong return type"
+        except ValueError as e:
+            assert "must return a TimeProvider instance" in str(e)
+
+    finally:
+        # Cleanup
+        if temp_dir in sys.path:
+            sys.path.remove(temp_dir)
+        os.unlink(temp_module_path)
+
+
+def test_create_time_provider_missing_attribute():
+    """Test error handling when module doesn't have the specified attribute."""
+    try:
+        create_time_provider("datetime:nonexistent_function")
         assert False, "Should have raised ValueError"
     except ValueError as e:
         assert "Could not import time provider" in str(e)
