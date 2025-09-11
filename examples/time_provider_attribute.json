@@ -1,0 +1,52 @@
+{
+  "examples": {
+    "attribute_date": {
+      "mode": "declarative",
+      "extractor": "attribute_date",
+      "field": "properties.fire_date",
+      "format": "auto",
+      "tz": "UTC"
+    },
+    
+    "attribute_interval": {
+      "mode": "declarative", 
+      "extractor": "attribute_interval",
+      "field": "properties.start_date",
+      "format": "%Y-%m-%d",
+      "tz": "UTC",
+      "interval": {
+        "end_field": "properties.end_date",
+        "default_days": 7
+      }
+    },
+    
+    "from_epoch": {
+      "mode": "declarative",
+      "extractor": "from_epoch", 
+      "field": "properties.timestamp",
+      "tz": "UTC"
+    },
+    
+    "regex_from_string": {
+      "mode": "declarative",
+      "extractor": "regex_from_string",
+      "field": "properties.description",
+      "format": "%Y-%m-%d",
+      "tz": "UTC",
+      "regex": {
+        "pattern": "\\d{4}-\\d{2}-\\d{2}"
+      }
+    },
+    
+    "attribute_date_list": {
+      "mode": "declarative",
+      "extractor": "attribute_date",
+      "field": "properties.analysis_dates", 
+      "format": "auto",
+      "tz": "UTC",
+      "fanout": {
+        "as_list": true
+      }
+    }
+  }
+}

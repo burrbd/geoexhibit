@@ -30,7 +30,12 @@ class S3Publisher(Publisher):
         self.s3_bucket = config.s3_bucket
         
         try:
-            self.s3_client = boto3.client('s3')
+            # Use region from config if available
+            if config.aws_region:
+                self.s3_client = boto3.client('s3', region_name=config.aws_region)
+            else:
+                self.s3_client = boto3.client('s3')
+            
             # Test connectivity
             if not dry_run:
                 self.s3_client.head_bucket(Bucket=self.s3_bucket)

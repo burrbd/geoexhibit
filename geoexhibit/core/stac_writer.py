@@ -18,70 +18,59 @@ logger = logging.getLogger(__name__)
 
 class HrefResolver:
     """
-    Enforces GeoExhibit HREF rules:
-    - COG assets: fully qualified S3 URLs (s3://bucket/key.tif)
-    - All other HREFs: strictly relative paths
+    Enforces GeoExhibit HREF rules using canonical layout:
+    - COG assets: fully qualified S3 URLs (s3://bucket/jobs/<job_id>/assets/...)
+    - All other HREFs: strictly relative paths within the canonical structure
     """
     
-    def __init__(self, config: GeoExhibitConfig, job_id: str):
-        """Initialize with configuration and job ID."""
+    def __init__(self, config: GeoExhibitConfig, layout: CanonicalLayout):
+        """Initialize with configuration and canonical layout."""
         self.config = config
-        self.job_id = job_id
+        self.layout = layout
         self.s3_bucket = config.s3_bucket
     
-    def resolve_asset_href(self, asset: AssetSpec, is_cog: bool = False) -> str:
+    def resolve_cog_asset_href(self, item_id: str, asset_name: str) -> str:
         """
-        Resolve asset HREF according to GeoExhibit rules.
+        Resolve COG asset HREF to fully qualified S3 URL.
         
         Args:
-            asset: AssetSpec with relative href
-            is_cog: True if this is a COG asset (gets S3 URL)
+            item_id: Item ID for this asset
+            asset_name: Logical asset name (e.g., "analysis.tif")
             
         Returns:
-            Resolved HREF string
+            Fully qualified S3 URL
         """
-        if is_cog:
-            # COG assets get fully qualified S3 URLs
-            if asset.href.startswith('s3://'):
-                return asset.href  # Already qualified
-            else:
-                # Build S3 URL with job scoping
-                jobs_prefix = self.config.get_s3_prefix("jobs")
-                s3_key = f"{jobs_prefix}{self.job_id}/{asset.href}"
-                return f"s3://{self.s3_bucket}/{s3_key}"
-        else:
-            # All other assets get relative paths (job-scoped)
-            if asset.href.startswith('/') or '://' in asset.href:
-                raise ValueError(f"Non-COG asset HREF must be relative: {asset.href}")
-            return f"jobs/{self.job_id}/{asset.href}"
+        s3_key = self.layout.asset_path(item_id, asset_name)
+        return f"s3://{self.s3_bucket}/{s3_key}"
     
-    def resolve_stac_href(self, relative_path: str, stac_type: str) -> str:
+    def resolve_thumbnail_href(self, item_id: str, thumb_name: str) -> str:
         """
-        Resolve STAC JSON file HREF (always relative).
+        Resolve thumbnail HREF to relative path.
         
         Args:
-            relative_path: Relative path for the STAC file
-            stac_type: Type of STAC file ('collection', 'item', etc.)
+            item_id: Item ID for this thumbnail
+            thumb_name: Thumbnail filename
             
         Returns:
-            Relative HREF path with job scoping
+            Relative HREF path
         """
-        if relative_path.startswith('/') or '://' in relative_path:
-            raise ValueError(f"STAC HREF must be relative: {relative_path}")
-        
-        # STAC files are scoped under jobs/<job_id>/stac/...
-        return f"jobs/{self.job_id}/stac/{stac_type}s/{relative_path}"
+        return f"../thumbs/{item_id}/{thumb_name}"
     
-    def resolve_pmtiles_href(self, relative_path: str) -> str:
-        """Resolve PMTiles HREF (always relative, job-scoped)."""
-        if relative_path.startswith('/') or '://' in relative_path:
-            raise ValueError(f"PMTiles HREF must be relative: {relative_path}")
-        
-        return f"jobs/{self.job_id}/pmtiles/{relative_path}"
+    def resolve_collection_href(self) -> str:
+        """Resolve collection JSON HREF (relative)."""
+        return "collection.json"
+    
+    def resolve_item_href(self, item_id: str) -> str:
+        """Resolve item JSON HREF (relative from collection perspective)."""
+        return f"items/{item_id}.json"
+    
+    def resolve_pmtiles_href(self) -> str:
+        """Resolve PMTiles HREF (relative from collection perspective)."""
+        return "../pmtiles/features.pmtiles"
 
 
 def create_stac_collection(plan: PublishPlan, config: GeoExhibitConfig, 
-                          href_resolver: HrefResolver) -> pystac.Collection:
+                          layout: CanonicalLayout) -> pystac.Collection:
     """
     Create a STAC Collection from the publish plan.
     
@@ -141,22 +130,22 @@ def create_stac_collection(plan: PublishPlan, config: GeoExhibitConfig,
         elif ext_name == "processing":
             ProcessingExtension.add_to(collection)
     
-    # Add PMTiles link if available
-    if plan.pmtiles_path:
-        pmtiles_href = href_resolver.resolve_pmtiles_href(plan.pmtiles_path)
-        pmtiles_link = pystac.Link(
-            rel="pmtiles",
-            target=pmtiles_href,
-            media_type="application/x-pmtiles",
-            title="Vector tiles (PMTiles)"
-        )
-        collection.add_link(pmtiles_link)
+    # Add PMTiles link using canonical layout
+    href_resolver = HrefResolver(config, layout)
+    pmtiles_href = href_resolver.resolve_pmtiles_href()
+    pmtiles_link = pystac.Link(
+        rel="pmtiles",
+        target=pmtiles_href,
+        media_type="application/x-pmtiles",
+        title="Vector tiles (PMTiles)"
+    )
+    collection.add_link(pmtiles_link)
     
     return collection
 
 
 def create_stac_item(publish_item: PublishItem, collection: pystac.Collection, 
-                    config: GeoExhibitConfig, href_resolver: HrefResolver) -> pystac.Item:
+                    config: GeoExhibitConfig, layout: CanonicalLayout) -> pystac.Item:
     """
     Create a STAC Item from a PublishItem.
     
@@ -211,12 +200,13 @@ def create_stac_item(publish_item: PublishItem, collection: pystac.Collection,
         elif ext_name == "processing":
             ProcessingExtension.add_to(item)
     
-    # Add assets
+    # Add assets using canonical layout
+    href_resolver = HrefResolver(config, layout)
     analyzer_output = publish_item.analyzer_output
     
     # Add primary COG asset with required roles
     primary_asset = analyzer_output.primary_cog_asset
-    primary_href = href_resolver.resolve_asset_href(primary_asset, is_cog=True)
+    primary_href = href_resolver.resolve_cog_asset_href(publish_item.item_id, primary_asset.key)
     
     # Ensure primary COG has required roles
     primary_roles = list(primary_asset.roles or [])
@@ -236,10 +226,15 @@ def create_stac_item(publish_item: PublishItem, collection: pystac.Collection,
     
     item.add_asset(primary_asset.key, pystac_asset)
     
-    # Add additional assets
+    # Add additional assets (thumbnails, etc.)
     if analyzer_output.additional_assets:
         for asset_spec in analyzer_output.additional_assets:
-            asset_href = href_resolver.resolve_asset_href(asset_spec, is_cog=False)
+            # Determine if this is a thumbnail or other asset
+            if "thumbnail" in (asset_spec.roles or []):
+                asset_href = href_resolver.resolve_thumbnail_href(publish_item.item_id, asset_spec.key)
+            else:
+                # For now, treat non-thumbnail additional assets as thumbnails for relative pathing
+                asset_href = href_resolver.resolve_thumbnail_href(publish_item.item_id, asset_spec.key)
             
             additional_asset = pystac.Asset(
                 href=asset_href,
@@ -268,29 +263,29 @@ def write_stac_catalog(plan: PublishPlan, config: GeoExhibitConfig,
     Returns:
         Dictionary with paths and metadata for the written STAC files
     """
-    href_resolver = HrefResolver(config, plan.job_id)
+    layout = CanonicalLayout(plan.job_id)
     
     # Create collection
-    collection = create_stac_collection(plan, config, href_resolver)
+    collection = create_stac_collection(plan, config, layout)
     
     # Create items
     items = []
     for publish_item in plan.items:
-        item = create_stac_item(publish_item, collection, config, href_resolver)
+        item = create_stac_item(publish_item, collection, config, layout)
         items.append(item)
         collection.add_item(item)
     
     # Prepare output paths
     if output_dir:
-        # Local output mode
-        stac_dir = output_dir / "stac"
-        collections_dir = stac_dir / "collections"
+        # Local output mode - use the canonical structure locally
+        job_dir = output_dir / f"jobs/{plan.job_id}"
+        stac_dir = job_dir / "stac"
         items_dir = stac_dir / "items"
         
-        collections_dir.mkdir(parents=True, exist_ok=True)
+        stac_dir.mkdir(parents=True, exist_ok=True)
         items_dir.mkdir(parents=True, exist_ok=True)
         
-        collection_path = collections_dir / f"{plan.collection_id}.json"
+        collection_path = stac_dir / "collection.json"
         item_paths = []
         
         for item in items:
@@ -298,12 +293,9 @@ def write_stac_catalog(plan: PublishPlan, config: GeoExhibitConfig,
             item_paths.append(item_path)
     
     else:
-        # S3 output mode - return relative paths that will be resolved later
-        collection_path = href_resolver.resolve_stac_href(f"{plan.collection_id}.json", "collection")
-        item_paths = [
-            href_resolver.resolve_stac_href(f"{item.id}.json", "item") 
-            for item in items
-        ]
+        # S3 output mode - return canonical S3 paths
+        collection_path = layout.collection_path
+        item_paths = [layout.item_path(item.id) for item in items]
     
     # Validate STAC before writing/returning
     _validate_stac_collection(collection)
@@ -325,7 +317,8 @@ def write_stac_catalog(plan: PublishPlan, config: GeoExhibitConfig,
             for path, item in zip(item_paths, items)
         ],
         "job_id": plan.job_id,
-        "collection_id": plan.collection_id
+        "collection_id": plan.collection_id,
+        "layout": layout
     }
 
 

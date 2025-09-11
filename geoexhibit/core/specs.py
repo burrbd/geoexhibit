@@ -91,7 +91,8 @@ def create_default_config() -> Dict[str, Any]:
             "description": "A collection of geospatial analyses"
         },
         "aws": {
-            "s3_bucket": "your-bucket-name"
+            "s3_bucket": "your-bucket-name",
+            "region": "ap-southeast-2"
         },
         "map": {
             "pmtiles": {

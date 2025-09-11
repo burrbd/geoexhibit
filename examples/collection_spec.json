@@ -1,0 +1,35 @@
+{
+  "project": {
+    "name": "sa-fire-analyses",
+    "collection_id": "fires_sa_demo",
+    "title": "SA Fire Analyses Demo",
+    "description": "Demo raster analyses (dNBR, severity) across fire events in South Australia"
+  },
+  "aws": {
+    "s3_bucket": "geoexhibit-demo",
+    "region": "ap-southeast-2"
+  },
+  "map": {
+    "pmtiles": {
+      "feature_id_property": "feature_id",
+      "minzoom": 5,
+      "maxzoom": 14
+    },
+    "base_url": ""
+  },
+  "stac": {
+    "use_extensions": ["proj", "raster", "processing"],
+    "geometry_in_item": true
+  },
+  "ids": {
+    "strategy": "ulid",
+    "prefix": "fire"
+  },
+  "time": {
+    "mode": "declarative",
+    "extractor": "attribute_date", 
+    "field": "properties.fire_date",
+    "format": "auto",
+    "tz": "UTC"
+  }
+}

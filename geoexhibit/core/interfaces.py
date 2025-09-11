@@ -140,6 +140,11 @@ class GeoExhibitConfig:
         return self.aws["s3_bucket"]
     
     @property
+    def aws_region(self) -> Optional[str]:
+        """Get AWS region (optional)."""
+        return self.aws.get("region")
+    
+    @property
     def collection_id(self) -> str:
         """Get collection ID."""
         return self.project["collection_id"]
