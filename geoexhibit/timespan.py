@@ -8,6 +8,7 @@ from typing import Optional, Union
 @dataclass
 class TimeSpan:
     """Represents a time span for analysis."""
+
     start: datetime
     end: Optional[datetime] = None
 
@@ -20,4 +21,5 @@ class TimeSpan:
         """Convert to STAC-compatible datetime format."""
         if self.is_instant:
             return self.start
+        assert self.end is not None  # For mypy - we know it's not None if not instant
         return f"{self.start.isoformat()}Z/{self.end.isoformat()}Z"

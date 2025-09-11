@@ -10,6 +10,7 @@ from .timespan import TimeSpan
 @dataclass
 class AssetSpec:
     """Specification for a STAC asset."""
+
     key: str
     href: str
     title: Optional[str] = None
@@ -21,6 +22,7 @@ class AssetSpec:
 @dataclass
 class AnalyzerOutput:
     """Output from an analyzer for a single feature/time combination."""
+
     primary_cog_asset: AssetSpec
     additional_assets: Optional[List[AssetSpec]] = None
     extra_properties: Optional[Dict[str, Any]] = None
@@ -31,7 +33,9 @@ class Analyzer(ABC):
 
     @abstractmethod
     def analyze(
-        self, feature: Dict[str, Any], timespan: TimeSpan,
+        self,
+        feature: Dict[str, Any],
+        timespan: TimeSpan,
     ) -> AnalyzerOutput:
         """Analyze a feature at a specific time and return outputs."""
         pass

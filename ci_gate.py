@@ -14,7 +14,9 @@ def get_github_token() -> Optional[str]:
 
 
 def check_latest_workflow_run(
-    owner: str, repo: str, token: Optional[str] = None,
+    owner: str,
+    repo: str,
+    token: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Check the status of the latest workflow run for the current branch.
@@ -38,7 +40,7 @@ def check_latest_workflow_run(
     headers = {
         "Authorization": f"token {token}",
         "Accept": "application/vnd.github.v3+json",
-        "X-GitHub-Api-Version": "2022-11-28"
+        "X-GitHub-Api-Version": "2022-11-28",
     }
 
     try:
@@ -51,9 +53,7 @@ def check_latest_workflow_run(
 
         with urllib.request.urlopen(req) as response:
             if response.status != 200:
-                return {
-                    "error": f"GitHub API returned status {response.status}"
-                }
+                return {"error": f"GitHub API returned status {response.status}"}
 
             data = json.loads(response.read().decode())
 
@@ -69,7 +69,7 @@ def check_latest_workflow_run(
             "html_url": latest_run["html_url"],
             "created_at": latest_run["created_at"],
             "updated_at": latest_run["updated_at"],
-            "head_sha": latest_run["head_sha"]
+            "head_sha": latest_run["head_sha"],
         }
 
         # If failed, get logs URL
@@ -100,20 +100,20 @@ def main():
     result = check_latest_workflow_run(owner, repo)
 
     if "error" in result:
-        print(f"❌ Error: {result["error"]}")
+        print(f"❌ Error: {result['error']}")
         sys.exit(1)
 
     if result["success"]:
-        print(f"✅ CI PASSED - Latest workflow run succeeded")
-        print(f"   Status: {result["conclusion"]}")
-        print(f"   URL: {result["html_url"]}")
+        print("✅ CI PASSED - Latest workflow run succeeded")
+        print(f"   Status: {result['conclusion']}")
+        print(f"   URL: {result['html_url']}")
         sys.exit(0)
     else:
-        print(f"❌ CI FAILED - Latest workflow run failed")
-        print(f"   Status: {result["conclusion"]}")
-        print(f"   URL: {result["html_url"]}")
+        print("❌ CI FAILED - Latest workflow run failed")
+        print(f"   Status: {result['conclusion']}")
+        print(f"   URL: {result['html_url']}")
         if "logs_url" in result:
-            print(f"   Logs: {result["logs_url"]}")
+            print(f"   Logs: {result['logs_url']}")
         print("\nCI must be green before continuing development!")
         sys.exit(1)
 
