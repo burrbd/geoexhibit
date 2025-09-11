@@ -10,11 +10,11 @@ from typing import Optional, Dict, Any
 
 def get_github_token() -> Optional[str]:
     """Get GitHub token from environment."""
-    return os.environ.get('GITHUB_TOKEN')
+    return os.environ.get("GITHUB_TOKEN")
 
 
 def check_latest_workflow_run(
-    owner: str, repo: str, token: Optional[str] = None
+    owner: str, repo: str, token: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Check the status of the latest workflow run for the current branch.
@@ -100,20 +100,20 @@ def main():
     result = check_latest_workflow_run(owner, repo)
 
     if "error" in result:
-        print(f"❌ Error: {result['error']}")
+        print(f"❌ Error: {result["error"]}")
         sys.exit(1)
 
     if result["success"]:
         print(f"✅ CI PASSED - Latest workflow run succeeded")
-        print(f"   Status: {result['conclusion']}")
-        print(f"   URL: {result['html_url']}")
+        print(f"   Status: {result["conclusion"]}")
+        print(f"   URL: {result["html_url"]}")
         sys.exit(0)
     else:
         print(f"❌ CI FAILED - Latest workflow run failed")
-        print(f"   Status: {result['conclusion']}")
-        print(f"   URL: {result['html_url']}")
+        print(f"   Status: {result["conclusion"]}")
+        print(f"   URL: {result["html_url"]}")
         if "logs_url" in result:
-            print(f"   Logs: {result['logs_url']}")
+            print(f"   Logs: {result["logs_url"]}")
         print("\nCI must be green before continuing development!")
         sys.exit(1)
 

@@ -31,7 +31,7 @@ class Analyzer(ABC):
 
     @abstractmethod
     def analyze(
-        self, feature: Dict[str, Any], timespan: TimeSpan
+        self, feature: Dict[str, Any], timespan: TimeSpan,
     ) -> AnalyzerOutput:
         """Analyze a feature at a specific time and return outputs."""
         pass
