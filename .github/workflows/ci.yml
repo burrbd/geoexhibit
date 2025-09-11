@@ -33,7 +33,7 @@ jobs:
       run: ruff check .
     
     - name: Type check with mypy
-      run: mypy geoexhibit
+      run: mypy geoexhibit --config-file pyproject.toml
     
     - name: Test with pytest
       run: pytest --cov=geoexhibit --cov-report=xml --cov-fail-under=95
