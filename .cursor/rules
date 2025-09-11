@@ -1,0 +1,1 @@
+Comments are regarded as a code smell. Code should be self-documenting through clear naming, good structure, and well-designed interfaces. Only add comments where there is unexpected code that is unavoidable or where there is complexity/decisions that need explanation. Minimal docstrings remain pythonic and acceptable.
