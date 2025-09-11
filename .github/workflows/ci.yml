@@ -33,7 +33,7 @@ jobs:
       run: ruff check .
     
     - name: Type check with mypy
-      run: mypy geoexhibit --ignore-missing-imports
+      run: mypy geoexhibit
     
     - name: Test with pytest
       run: pytest --cov=geoexhibit --cov-report=xml --cov-fail-under=95
