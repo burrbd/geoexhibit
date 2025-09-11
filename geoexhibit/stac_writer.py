@@ -5,10 +5,10 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 
 import pystac
-from pystac.extensions.processing import ProcessingExtension  # type: ignore
+from pystac.extensions.processing import ProcessingExtension
 from pystac.extensions.projection import ProjectionExtension
 from pystac.extensions.raster import RasterExtension
-from shapely.geometry import shape  # type: ignore
+from shapely.geometry import shape
 
 from .config import GeoExhibitConfig
 from .layout import CanonicalLayout
