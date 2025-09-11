@@ -15,6 +15,7 @@ dependencies = [
     "click>=8.0.0",
     "pystac>=1.9.0",
     "ulid-py>=1.1.0",
+    "requests>=2.31.0",
 ]
 
 [project.optional-dependencies]

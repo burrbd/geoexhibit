@@ -3,7 +3,8 @@
 
 import os
 import json
-import requests
+import urllib.request
+import urllib.parse
 from typing import Optional, Dict, Any
 
 
@@ -36,13 +37,17 @@ def check_latest_workflow_run(owner: str, repo: str, token: Optional[str] = None
     
     try:
         # Get latest workflow runs
-        url = f"https://api.github.com/repos/{owner}/{repo}/actions/runs"
-        params = {"per_page": 1, "status": "completed"}
+        base_url = f"https://api.github.com/repos/{owner}/{repo}/actions/runs"
+        params = urllib.parse.urlencode({"per_page": 1, "status": "completed"})
+        url = f"{base_url}?{params}"
         
-        response = requests.get(url, headers=headers, params=params)
-        response.raise_for_status()
+        req = urllib.request.Request(url, headers=headers)
         
-        data = response.json()
+        with urllib.request.urlopen(req) as response:
+            if response.status != 200:
+                return {"error": f"GitHub API returned status {response.status}"}
+            
+            data = json.loads(response.read().decode())
         
         if not data.get("workflow_runs"):
             return {"error": "No workflow runs found"}
@@ -65,8 +70,10 @@ def check_latest_workflow_run(owner: str, repo: str, token: Optional[str] = None
             
         return result
         
-    except requests.RequestException as e:
-        return {"error": f"GitHub API request failed: {str(e)}"}
+    except urllib.error.HTTPError as e:
+        return {"error": f"GitHub API HTTP error {e.code}: {e.reason}"}
+    except urllib.error.URLError as e:
+        return {"error": f"GitHub API URL error: {e.reason}"}
     except Exception as e:
         return {"error": f"Unexpected error: {str(e)}"}
 
