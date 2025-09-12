@@ -93,15 +93,17 @@ def create_stac_collection(
         elif ext_name == "processing" and PROCESSING_EXTENSION_AVAILABLE:
             ProcessingExtension.add_to(collection)
 
-    href_resolver = HrefResolver(config, layout)
-    pmtiles_href = href_resolver.resolve_pmtiles_href()
-    pmtiles_link = pystac.Link(
-        rel="pmtiles",
-        target=pmtiles_href,
-        media_type="application/x-pmtiles",
-        title="Vector tiles (PMTiles)",
-    )
-    collection.add_link(pmtiles_link)
+    # Only add PMTiles link if PMTiles are included in the plan
+    if hasattr(plan, "pmtiles_path") and plan.pmtiles_path:
+        href_resolver = HrefResolver(config, layout)
+        pmtiles_href = href_resolver.resolve_pmtiles_href()
+        pmtiles_link = pystac.Link(
+            rel="pmtiles",
+            target=pmtiles_href,
+            media_type="application/x-pmtiles",
+            title="Vector tiles (PMTiles)",
+        )
+        collection.add_link(pmtiles_link)
 
     return collection
 
