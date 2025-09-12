@@ -4,10 +4,9 @@ Infrastructure validation script for GeoExhibit.
 Tests deployed TiTiler endpoints with existing demo data.
 """
 
-import json
 import sys
 import urllib.parse
-from typing import Dict, Any
+from typing import Dict
 
 import requests
 
