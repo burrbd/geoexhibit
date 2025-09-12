@@ -142,6 +142,7 @@ def create_stac_item(
 
     for ext_name in config.use_extensions:
         if ext_name == "proj":
+            ProjectionExtension.add_to(item)
             proj_ext = ProjectionExtension.ext(item)
             proj_ext.epsg = 4326
         elif ext_name == "raster":
