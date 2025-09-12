@@ -1,2 +1,0 @@
-[console_scripts]
-geoexhibit = geoexhibit.cli:main
