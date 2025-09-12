@@ -5,10 +5,17 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 
 import pystac
-from pystac.extensions.processing import ProcessingExtension
 from pystac.extensions.projection import ProjectionExtension
 from pystac.extensions.raster import RasterExtension
 from shapely.geometry import shape
+
+try:
+    from pystac.extensions.processing import ProcessingExtension
+
+    PROCESSING_EXTENSION_AVAILABLE = True
+except ImportError:
+    ProcessingExtension = None
+    PROCESSING_EXTENSION_AVAILABLE = False
 
 from .config import GeoExhibitConfig
 from .layout import CanonicalLayout
@@ -83,7 +90,7 @@ def create_stac_collection(
             ProjectionExtension.add_to(collection)
         elif ext_name == "raster":
             RasterExtension.add_to(collection)
-        elif ext_name == "processing":
+        elif ext_name == "processing" and PROCESSING_EXTENSION_AVAILABLE:
             ProcessingExtension.add_to(collection)
 
     href_resolver = HrefResolver(config, layout)
@@ -139,7 +146,7 @@ def create_stac_item(
             proj_ext.epsg = 4326
         elif ext_name == "raster":
             RasterExtension.add_to(item)
-        elif ext_name == "processing":
+        elif ext_name == "processing" and PROCESSING_EXTENSION_AVAILABLE:
             ProcessingExtension.add_to(item)
 
     href_resolver = HrefResolver(config, layout)

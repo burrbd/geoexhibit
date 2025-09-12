@@ -4,11 +4,11 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-import numpy as np  # type: ignore
-import rasterio  # type: ignore
-from rasterio.crs import CRS  # type: ignore
-from rasterio.transform import from_bounds  # type: ignore
-from shapely.geometry import shape  # type: ignore
+import numpy as np
+import rasterio
+from rasterio.crs import CRS
+from rasterio.transform import from_bounds
+from shapely.geometry import shape
 
 from .analyzer import Analyzer, AnalyzerOutput, AssetSpec
 from .timespan import TimeSpan
