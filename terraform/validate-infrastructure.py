@@ -6,7 +6,6 @@ Tests deployed TiTiler endpoints with existing demo data.
 
 import sys
 import urllib.parse
-from typing import Dict
 
 import requests
 

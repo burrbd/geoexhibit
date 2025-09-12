@@ -86,7 +86,7 @@ class SteelThreadValidator:
                 # Test that CloudFront adds appropriate headers (no-op check)
                 _ = response.headers.get("cache-control")
                 print("✅ CloudFront static content serving: PASSED")
-                print(f"   CloudFront configured for dynamic + static content")
+                print("   CloudFront configured for dynamic + static content")
                 return True
             else:
                 print(f"❌ CloudFront: Failed - {response.status_code}")
