@@ -1,0 +1,18 @@
+# Example Terraform configuration
+# Copy this file to terraform.tfvars and modify as needed
+
+# Project name (used for resource naming)
+project_name = "fire-severity-sa"
+
+# Environment (dev, staging, prod)
+environment = "dev"
+
+# AWS region
+aws_region = "ap-southeast-2"
+
+# Optional: Site URL for CORS configuration
+# site_url = "https://yourdomain.com"
+
+# Lambda configuration
+lambda_timeout = 15
+lambda_memory_size = 2048
