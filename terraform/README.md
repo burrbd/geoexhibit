@@ -5,14 +5,21 @@ Terraform configuration for deploying the GeoExhibit infrastructure on AWS.
 ## Setup
 
 ```bash
-# Configure AWS credentials
+# 1. Configure AWS credentials
 aws configure
 
-# Create IAM permissions
+# 2. Create IAM permissions (requires temporary AdministratorAccess)
 ./setup-aws-permissions.sh
 
-# Deploy infrastructure
+# 3. Configure terraform variables
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your settings
+
+# 4. Deploy infrastructure
 make deploy
+
+# 5. Validate deployment
+python validate-infrastructure.py https://YOUR_CLOUDFRONT_URL
 ```
 
 ## Configuration
@@ -60,8 +67,42 @@ Browser → CloudFront → TiTiler (Lambda) → COG (S3)
 - `/tiles/*` → Lambda (dynamic tiling)
 - `/stac-data/*` → S3 (static metadata)
 
+## Validation
+
+After deployment, validate the infrastructure:
+
+```bash
+# Get CloudFront URL from terraform output
+CLOUDFRONT_URL=$(terraform output -raw cloudfront_url)
+
+# Run validation tests
+python validate-infrastructure.py $CLOUDFRONT_URL
+```
+
+The validation script tests:
+- Health endpoint responds correctly
+- CORS headers are configured
+- TileJSON endpoint works with demo STAC data
+- Actual tile requests return valid images
+
+## Manual Testing
+
+Test endpoints manually:
+
+```bash
+# Health check
+curl https://YOUR_CLOUDFRONT_URL/health
+
+# TileJSON for demo data
+STAC_URL="https://geoexhibit-demo.s3.ap-southeast-2.amazonaws.com/jobs/01K4XRE3K3KQDMTZ60XY1XWMN4/stac/items/01K4XRE3KB6H2JPVKHE77YE7QA.json"
+curl "https://YOUR_CLOUDFRONT_URL/stac/tilejson.json?url=$STAC_URL&format=webp"
+
+# Sample tile
+curl "https://YOUR_CLOUDFRONT_URL/stac/tiles/8/128/128.png?url=$STAC_URL&format=webp"
+```
+
 ## TODO
 
-1. **Attempt lambda using stripped back fast api app** - Replace `titiler.application` with minimal `titiler.core` + `TilerFactory` to reduce package size
-2. **Test the endpoints using a custom site url** - Configure CORS with specific domain and validate tile serving
-3. **Work out how to generate and host the "static" web map** - Create web map interface for visualizing analysis results
+1. **Test with custom site URL** - Configure CORS with specific domain and validate web map integration
+2. **Optimize Lambda package size** - Consider minimal titiler.core + TilerFactory
+3. **Web map integration** - Update web_scaffold to use deployed endpoints

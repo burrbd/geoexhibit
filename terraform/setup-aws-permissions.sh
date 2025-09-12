@@ -27,7 +27,7 @@ POLICY_DOCUMENT=$(cat <<EOF
         "iam:*",
         "lambda:*",
         "cloudfront:*",
-        "logs:*",
+        "logs:*"
       ],
       "Resource": "*"
     }
@@ -51,4 +51,3 @@ aws iam attach-user-policy \
   --policy-arn "$POLICY_ARN"
 
 echo "Policy attached to user $CURRENT_USER"
-n

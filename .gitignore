@@ -53,3 +53,14 @@ temp_*
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+*.tfvars
+.terraform.tfstate.lock.info
+
+# Lambda build artifacts
+terraform/lambda/titiler/lambda-package.zip
