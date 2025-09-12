@@ -126,16 +126,19 @@ resource "aws_iam_role_policy_attachment" "titiler_logs" {
 # Docker build/push handled separately from infrastructure
 
 locals {
-  lambda_package_hash = filebase64sha256("lambda/titiler/lambda-package.zip")
-  lambda_package_key  = "lambda-packages/titiler-lambda-${substr(local.lambda_package_hash, 0, 16)}.zip"
+  lambda_package_path    = "${path.root}/lambda/titiler/lambda-package.zip"
+  lambda_package_exists  = fileexists(local.lambda_package_path)
+  lambda_package_hash    = local.lambda_package_exists ? filebase64sha256(local.lambda_package_path) : ""
+  lambda_package_key     = local.lambda_package_exists ? "lambda-packages/titiler-lambda-${substr(local.lambda_package_hash, 0, 16)}.zip" : ""
 }
 
 resource "aws_s3_object" "lambda_package" {
+  count  = local.lambda_package_exists ? 1 : 0
   bucket = aws_s3_bucket.analyses.bucket
   key    = local.lambda_package_key
-  source = "lambda/titiler/lambda-package.zip"
-  etag   = filemd5("lambda/titiler/lambda-package.zip")
-  
+  source = local.lambda_package_path
+  etag   = local.lambda_package_exists ? filemd5(local.lambda_package_path) : null
+
   tags = {
     Project = var.project_name
     Environment = var.environment
@@ -144,20 +147,21 @@ resource "aws_s3_object" "lambda_package" {
 }
 
 resource "aws_lambda_function" "titiler" {
+  count        = local.lambda_package_exists ? 1 : 0
   function_name = "${var.project_name}-titiler"
   role         = aws_iam_role.titiler_role.arn
   timeout      = var.lambda_timeout
   memory_size  = var.lambda_memory_size
   architectures = ["x86_64"]
   publish      = true  # Publish version for CloudFront
-  
-  s3_bucket        = aws_s3_object.lambda_package.bucket
-  s3_key          = aws_s3_object.lambda_package.key
-  s3_object_version = aws_s3_object.lambda_package.version_id
+
+  s3_bucket        = aws_s3_object.lambda_package[0].bucket
+  s3_key           = aws_s3_object.lambda_package[0].key
+  s3_object_version = aws_s3_object.lambda_package[0].version_id
   source_code_hash = local.lambda_package_hash
   handler          = "handler.handler"
   runtime          = "python3.12"
-  
+
   environment {
     variables = {
       S3_BUCKET = aws_s3_bucket.analyses.bucket
@@ -179,7 +183,8 @@ resource "aws_lambda_function" "titiler" {
 
 # Lambda Function URL (FURL) for direct access
 resource "aws_lambda_function_url" "titiler" {
-  function_name      = aws_lambda_function.titiler.function_name
+  count              = local.lambda_package_exists ? 1 : 0
+  function_name      = aws_lambda_function.titiler[0].function_name
   authorization_type = "NONE"
   
   cors {
@@ -194,6 +199,7 @@ resource "aws_lambda_function_url" "titiler" {
 
 # CloudFront Distribution
 resource "aws_cloudfront_distribution" "titiler" {
+  count      = local.lambda_package_exists ? 1 : 0
   depends_on = [aws_lambda_function_url.titiler]
   
   enabled             = true
@@ -202,7 +208,7 @@ resource "aws_cloudfront_distribution" "titiler" {
   
   # Lambda Function URL origin
   origin {
-    domain_name = replace(replace(aws_lambda_function_url.titiler.function_url, "https://", ""), "/", "")
+    domain_name = replace(replace(aws_lambda_function_url.titiler[0].function_url, "https://", ""), "/", "")
     origin_id   = "lambda-titiler"
 
     custom_origin_config {
