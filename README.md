@@ -32,6 +32,119 @@ A minimal, test-driven Python toolkit for publishing static STAC metadata and ra
    # Point to your published STAC collection
    ```
 
+## 🔥 Demo: Fire Analysis Example
+
+Here's a complete working example using the included demo data:
+
+### Step 1: Install Dependencies
+```bash
+pip install -e ".[dev]"
+pip install rasterio numpy shapely boto3 jsonschema
+
+# For PMTiles generation (optional - demo works without it):
+# Install tippecanoe: https://github.com/mapbox/tippecanoe#installation
+# Ubuntu/Debian: apt install tippecanoe
+# macOS: brew install tippecanoe
+```
+
+### Step 2: Configure AWS
+```bash
+export AWS_ACCESS_KEY_ID="your_access_key"
+export AWS_SECRET_ACCESS_KEY="your_secret_key"
+export AWS_DEFAULT_REGION="your_region"
+```
+
+### Step 3: Set Up Demo Configuration
+The repo includes `examples/config.json` with fire analysis settings:
+
+```json
+{
+  "project": {
+    "name": "sa-fire-analyses",
+    "collection_id": "fires_sa_demo",
+    "title": "SA Fire Analyses Demo",
+    "description": "Demo raster analyses across fire events"
+  },
+  "aws": {
+    "s3_bucket": "your-bucket-name",
+    "region": "ap-southeast-2"
+  },
+  "time": {
+    "mode": "declarative",
+    "extractor": "attribute_date",
+    "field": "properties.fire_date",
+    "format": "auto",
+    "tz": "UTC"
+  }
+}
+```
+
+Update the `s3_bucket` to your bucket name.
+
+### Step 4: Demo Features
+The repo includes `features.json` with 3 sample fire areas:
+- Fire Area A (Sept 15, 2023) - Polygon in South Australia  
+- Fire Area B (Oct 2, 2023) - Polygon with moderate severity
+- Fire Point (Nov 20, 2023) - Point location with low severity
+
+### Step 5: Run the Demo
+```bash
+# Publish to S3 (default)
+geoexhibit run examples/config.json
+
+# Or test locally first
+geoexhibit run examples/config.json --local-out ./demo_output
+
+# Preview without executing
+geoexhibit run examples/config.json --dry-run
+```
+
+### Step 6: Verify Results
+```bash
+# The pipeline outputs a job ID like: 01K4XQ0N2DB35WHWZCAK3H0WAT
+# Verify the published structure:
+python verify_aws_publishing.py examples/config.json <job_id>
+```
+
+### Expected Output Structure
+```
+s3://your-bucket/jobs/<job_id>/
+├── stac/
+│   ├── collection.json              # STAC Collection with fire analyses  
+│   └── items/
+│       ├── <item_id_1>.json         # Fire Area A analysis item
+│       ├── <item_id_2>.json         # Fire Area B analysis item  
+│       └── <item_id_3>.json         # Fire Point analysis item
+├── assets/
+│   ├── <item_id_1>/analysis.tif     # Primary COG for Area A
+│   ├── <item_id_2>/analysis.tif     # Primary COG for Area B
+│   └── <item_id_3>/analysis.tif     # Primary COG for Fire Point
+└── pmtiles/
+    └── features.pmtiles             # Vector tiles (if tippecanoe available)
+```
+
+### Step 7: Explore with Web Map
+```bash
+# Open web_scaffold/index.html in browser
+# Configure URLs to point to your published STAC collection
+# Use date slider to explore temporal fire analyses
+# Click features to load TiTiler raster overlays
+```
+
+### What the Demo Does
+1. **Loads 3 fire features** from `features.json`
+2. **Extracts fire dates** using declarative time provider (`properties.fire_date`)  
+3. **Generates synthetic COG analyses** using DemoAnalyzer (dNBR-style rasters)
+4. **Creates STAC Collection + 3 Items** with proper primary COG assets
+5. **Publishes to S3** under canonical `jobs/<job_id>/` layout
+6. **Verifies structure** using AWS APIs for TiTiler compatibility
+
+The generated COGs have:
+- ✅ **Cloud-optimized structure** (tiling, overviews, compression)
+- ✅ **Primary asset roles** `["data", "primary"]` for TiTiler auto-discovery
+- ✅ **Fully qualified S3 URLs** for direct TiTiler access
+- ✅ **Synthetic but realistic data** (NDVI-style values with time variation)
+
 ## 🏗️ Architecture
 
 **One-shot CLI publishing** - Single command publishes complete STAC Collection + Items + COG files to S3:
