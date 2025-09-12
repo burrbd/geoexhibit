@@ -2,7 +2,7 @@
 
 from pathlib import Path
 from typing import Dict, Any, Optional
-from ulid import new as new_ulid
+from ulid import ULID
 
 from .analyzer import Analyzer
 from .config import GeoExhibitConfig
@@ -39,7 +39,7 @@ def create_publish_plan(
     if time_provider is None:
         time_provider = _create_time_provider_from_config(config)
 
-    job_id = str(new_ulid())
+    job_id = str(ULID())
     items = []
 
     for feature in feature_list:
@@ -48,7 +48,7 @@ def create_publish_plan(
         time_spans = list(time_provider.for_feature(feature))
 
         for timespan in time_spans:
-            item_id = str(new_ulid())
+            item_id = str(ULID())
 
             analyzer_output = analyzer.analyze(feature, timespan)
 
@@ -92,7 +92,7 @@ def _ensure_feature_has_id(feature: Dict[str, Any], id_prefix: str = "") -> None
     props = feature.setdefault("properties", {})
 
     if "feature_id" not in props or not props["feature_id"]:
-        feature_id = f"{id_prefix}{new_ulid()}" if id_prefix else str(new_ulid())
+        feature_id = f"{id_prefix}{ULID()}" if id_prefix else str(ULID())
         props["feature_id"] = feature_id
 
 

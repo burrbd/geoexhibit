@@ -143,12 +143,12 @@ def validate_feature_collection(features: Dict[str, Any]) -> None:
 
 def ensure_feature_ids(features: Dict[str, Any]) -> None:
     """Ensure all features have a feature_id property using ULIDs."""
-    from ulid import new as new_ulid
+    from ulid import ULID
 
     for feature in features["features"]:
         props = feature.get("properties", {})
         if "feature_id" not in props or not props["feature_id"]:
-            props["feature_id"] = str(new_ulid())
+            props["feature_id"] = str(ULID())
             feature["properties"] = props
 
 
