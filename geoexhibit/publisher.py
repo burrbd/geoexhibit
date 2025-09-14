@@ -6,8 +6,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-import boto3  # type: ignore
-from botocore.exceptions import ClientError, NoCredentialsError  # type: ignore
+import boto3
+from botocore.exceptions import ClientError, NoCredentialsError
 
 from .config import GeoExhibitConfig
 from .layout import CanonicalLayout

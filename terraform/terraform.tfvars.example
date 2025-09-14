@@ -1,0 +1,21 @@
+# Example Terraform configuration
+# Copy this file to terraform.tfvars and modify as needed
+#
+# NOTE: Most configuration is now read from config.json automatically!
+# Only specify these variables if you need to override config.json values.
+
+# Path to GeoExhibit config.json (default: ../examples/config.json)
+# config_file = "../path/to/your/config.json"
+
+# Environment override (default: "dev")
+# environment = "prod"
+
+# Lambda configuration (infrastructure-specific, not in config.json)
+lambda_timeout = 15
+lambda_memory_size = 2048
+
+# Configuration is automatically read from config.json:
+# - project_name = config.json -> project.name
+# - aws_region = config.json -> aws.region  
+# - s3_bucket = config.json -> aws.s3_bucket
+# - site_url = config.json -> map.base_url

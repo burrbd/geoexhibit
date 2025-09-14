@@ -205,6 +205,7 @@ class Analyzer(ABC):
 - **DECISIONS.md**: 12 numbered implementation decisions with rationale
 - **PROJECT_STATUS.md**: Current completion status + metrics
 - **ROADMAP.md**: GitHub issues + dependency chain for next phases
+- **PLAYBOOK.md**: Agent workflow guide for GitHub API integration
 
 Rules are stored in .cursor/rules for Cursor registration.
 
