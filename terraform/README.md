@@ -4,6 +4,13 @@ Terraform configuration for deploying the GeoExhibit infrastructure on AWS.
 
 ## Setup
 
+### Prerequisites
+- AWS CLI v2 installed (see AWS documentation)
+- Docker installed (for Lambda package building)  
+- Terraform >= 1.0 installed
+
+### Deployment Steps
+
 ```bash
 # 1. Configure AWS credentials
 aws configure
@@ -11,16 +18,23 @@ aws configure
 # 2. Create IAM permissions (requires temporary AdministratorAccess)
 ./setup-aws-permissions.sh
 
-# 3. Configure terraform variables
+# 3. Configure terraform variables  
 cp terraform.tfvars.example terraform.tfvars
 # Edit terraform.tfvars with your settings
+# Important: Set s3_bucket to match your publisher config.json
 
-# 4. Deploy infrastructure
+# 4. Build Lambda package (required before terraform apply)
+make build-lambda
+
+# 5. Deploy infrastructure
 make deploy
 
-# 5. Validate deployment
+# 6. Validate deployment
 python validate-infrastructure.py https://YOUR_CLOUDFRONT_URL
 ```
+
+### For Cursor Agents
+The Makefile automates AWS CLI and Terraform installation for agent environments. The build process handles Lambda package creation automatically.
 
 ## Configuration
 

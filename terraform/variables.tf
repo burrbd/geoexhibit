@@ -39,3 +39,16 @@ variable "lambda_memory_size" {
   type        = number
   default     = 2048  # Optimized for performance
 }
+
+# Publisher configuration alignment
+variable "s3_bucket" {
+  description = "S3 bucket name (aligns with publisher config.json aws.s3_bucket)"
+  type        = string
+  default     = ""  # Will use project-name-analyses if not specified
+}
+
+variable "config_file" {
+  description = "Path to GeoExhibit config.json (optional - for variable alignment)"
+  type        = string
+  default     = ""
+}

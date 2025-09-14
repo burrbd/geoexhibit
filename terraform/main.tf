@@ -16,7 +16,7 @@ provider "aws" {
 
 # S3 Bucket for analysis data
 resource "aws_s3_bucket" "analyses" {
-  bucket = "${var.project_name}-analyses"
+  bucket = var.s3_bucket != "" ? var.s3_bucket : "${var.project_name}-analyses"
   
   tags = {
     Project = var.project_name
@@ -107,7 +107,7 @@ resource "aws_iam_role_policy" "titiler_s3" {
         Sid = "ReadSTACData"
         Effect = "Allow"
         Action = ["s3:GetObject"]
-        Resource = "${aws_s3_bucket.analyses.arn}/stac-data/*"
+        Resource = "${aws_s3_bucket.analyses.arn}/jobs/*/stac/*"
       }
     ]
   })
@@ -126,15 +126,20 @@ resource "aws_iam_role_policy_attachment" "titiler_logs" {
 # Docker build/push handled separately from infrastructure
 
 locals {
-  lambda_package_hash = filebase64sha256("lambda/titiler/lambda-package.zip")
+  # Lambda package path - must be built before terraform apply
+  lambda_package_path = "lambda/titiler/lambda-package.zip"
+  lambda_package_exists = fileexists(local.lambda_package_path)
+  lambda_package_hash = local.lambda_package_exists ? filebase64sha256(local.lambda_package_path) : "no-package"
   lambda_package_key  = "lambda-packages/titiler-lambda-${substr(local.lambda_package_hash, 0, 16)}.zip"
 }
 
+# Lambda package upload - only if package exists
 resource "aws_s3_object" "lambda_package" {
+  count  = local.lambda_package_exists ? 1 : 0
   bucket = aws_s3_bucket.analyses.bucket
   key    = local.lambda_package_key
-  source = "lambda/titiler/lambda-package.zip"
-  etag   = filemd5("lambda/titiler/lambda-package.zip")
+  source = local.lambda_package_path
+  etag   = filemd5(local.lambda_package_path)
   
   tags = {
     Project = var.project_name
@@ -151,10 +156,10 @@ resource "aws_lambda_function" "titiler" {
   architectures = ["x86_64"]
   publish      = true  # Publish version for CloudFront
   
-  s3_bucket        = aws_s3_object.lambda_package.bucket
-  s3_key          = aws_s3_object.lambda_package.key
-  s3_object_version = aws_s3_object.lambda_package.version_id
-  source_code_hash = local.lambda_package_hash
+  s3_bucket        = local.lambda_package_exists ? aws_s3_object.lambda_package[0].bucket : null
+  s3_key          = local.lambda_package_exists ? aws_s3_object.lambda_package[0].key : null
+  s3_object_version = local.lambda_package_exists ? aws_s3_object.lambda_package[0].version_id : null
+  source_code_hash = local.lambda_package_exists ? local.lambda_package_hash : null
   handler          = "handler.handler"
   runtime          = "python3.12"
   

@@ -10,6 +10,10 @@ environment = "dev"
 # AWS region
 aws_region = "ap-southeast-2"
 
+# Optional: S3 bucket name (aligns with publisher config.json)
+# If not specified, will use "project_name-analyses" 
+# s3_bucket = "geoexhibit-demo"
+
 # Optional: Site URL for CORS configuration
 # site_url = "https://yourdomain.com"
 

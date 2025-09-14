@@ -58,9 +58,17 @@ deploy-lambda: build-lambda
 		-target=aws_lambda_function_url.titiler \
 		-auto-approve
 
-# Deploy everything
-deploy: build-lambda init
+# Deploy everything (checks for lambda package first)
+deploy: check-lambda-package init
 	terraform apply -auto-approve
+
+# Check if lambda package exists before deploy
+check-lambda-package:
+	@if [ ! -f lambda/titiler/lambda-package.zip ]; then \
+		echo "Error: lambda-package.zip not found"; \
+		echo "Run 'make build-lambda' first to build the Lambda package"; \
+		exit 1; \
+	fi
 
 # Clean build artifacts
 clean:
