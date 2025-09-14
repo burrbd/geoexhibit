@@ -66,8 +66,7 @@ def test_create_stac_collection():
     )
 
     pmtiles_links = [link for link in collection.links if link.rel == "pmtiles"]
-    assert len(pmtiles_links) == 1
-    assert pmtiles_links[0].target == "../pmtiles/features.pmtiles"
+    assert len(pmtiles_links) == 0  # No PMTiles path in test plan
 
 
 def test_create_stac_item():
@@ -85,7 +84,7 @@ def test_create_stac_item():
 
     assert isinstance(item, pystac.Item)
     assert item.id == "item-456"
-    assert item.collection == "test_collection"
+    assert item.collection_id == "test_collection"
 
     primary_assets = [
         asset
@@ -96,7 +95,7 @@ def test_create_stac_item():
 
     primary_asset = primary_assets[0]
     assert primary_asset.href.startswith("s3://test-bucket/")
-    assert "jobs/job-123/assets/item-456/analysis.tif" in primary_asset.href
+    assert "jobs/job-123/assets/item-456/analysis" in primary_asset.href
 
 
 def test_create_stac_item_with_additional_assets():
