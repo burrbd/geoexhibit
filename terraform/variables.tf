@@ -1,29 +1,13 @@
-variable "project_name" {
-  description = "Name of the project (used for resource naming)"
+# GeoExhibit configuration file path
+variable "config_file" {
+  description = "Path to GeoExhibit config.json file"
   type        = string
-  default     = "geoexhibit"
+  default     = "../examples/config.json"
 }
 
+# Override variables (optional - will use config.json if not specified)
 variable "environment" {
-  description = "Environment name (dev, staging, prod)"
-  type        = string
-  default     = "dev"
-}
-
-variable "aws_region" {
-  description = "AWS region for resources"
-  type        = string
-  default     = "ap-southeast-2"
-}
-
-variable "domain_name" {
-  description = "Domain name for Cloudflare configuration (optional)"
-  type        = string
-  default     = ""
-}
-
-variable "site_url" {
-  description = "Site URL for CORS configuration (optional)"
+  description = "Environment name (dev, staging, prod) - overrides config.json"
   type        = string
   default     = ""
 }
@@ -40,15 +24,17 @@ variable "lambda_memory_size" {
   default     = 2048  # Optimized for performance
 }
 
-# Publisher configuration alignment
-variable "s3_bucket" {
-  description = "S3 bucket name (aligns with publisher config.json aws.s3_bucket)"
-  type        = string
-  default     = ""  # Will use project-name-analyses if not specified
-}
-
-variable "config_file" {
-  description = "Path to GeoExhibit config.json (optional - for variable alignment)"
-  type        = string
-  default     = ""
+# Read and parse GeoExhibit config.json
+locals {
+  # Load the publisher config.json file
+  config_data = jsondecode(file(var.config_file))
+  
+  # Extract values from config.json structure
+  project_name = local.config_data.project.name
+  aws_region   = local.config_data.aws.region
+  s3_bucket    = local.config_data.aws.s3_bucket
+  site_url     = try(local.config_data.map.base_url, "")
+  
+  # Use override if provided, otherwise default to "dev"
+  environment = var.environment != "" ? var.environment : "dev"
 }

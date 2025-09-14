@@ -12,7 +12,19 @@ output "s3_bucket_name" {
 
 output "aws_region" {
   description = "AWS region"
-  value       = var.aws_region
+  value       = local.aws_region
+}
+
+output "config_summary" {
+  description = "Configuration values read from config.json"
+  value = {
+    config_file  = var.config_file
+    project_name = local.project_name
+    aws_region   = local.aws_region
+    s3_bucket    = local.s3_bucket
+    site_url     = local.site_url
+    environment  = local.environment
+  }
 }
 
 

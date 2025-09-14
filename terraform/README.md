@@ -18,10 +18,12 @@ aws configure
 # 2. Create IAM permissions (requires temporary AdministratorAccess)
 ./setup-aws-permissions.sh
 
-# 3. Configure terraform variables  
+# 3. Configure terraform (uses your config.json automatically!)
 cp terraform.tfvars.example terraform.tfvars
-# Edit terraform.tfvars with your settings
-# Important: Set s3_bucket to match your publisher config.json
+# Edit terraform.tfvars only if you need to:
+# - Override config.json path (default: ../examples/config.json)  
+# - Override environment (default: "dev")
+# - Adjust Lambda settings (timeout, memory)
 
 # 4. Build Lambda package (required before terraform apply)
 make build-lambda
@@ -38,12 +40,21 @@ The Makefile automates AWS CLI and Terraform installation for agent environments
 
 ## Configuration
 
-Edit `variables.tf` to customize:
+**🎯 Unified Configuration**: Terraform automatically reads values from your GeoExhibit `config.json` file!
 
-- `project_name`: Resource naming (default: "geoexhibit")
+**Configuration source**: `../examples/config.json` (or override with `config_file` variable)
+
+**Automatic mapping**:
+- `project_name` ← `config.json → project.name`
+- `aws_region` ← `config.json → aws.region`  
+- `s3_bucket` ← `config.json → aws.s3_bucket`
+- `site_url` ← `config.json → map.base_url`
+
+**Override in terraform.tfvars** (optional):
+- `config_file`: Path to different config.json
 - `environment`: Environment name (default: "dev")
-- `aws_region`: AWS region (default: "ap-southeast-2")
-- `site_url`: CORS origin (default: "")
+- `lambda_timeout`: Lambda timeout (default: 15s)
+- `lambda_memory_size`: Lambda memory (default: 2048MB)
 
 ## Commands
 
@@ -57,11 +68,13 @@ make clean          # Clean build artifacts
 
 ## What Gets Created
 
-- **S3 Bucket**: Stores COG tiles and STAC metadata
-- **Lambda Function**: TiTiler with STAC extension (x86_64, 1536MB)
-- **Lambda Function URL**: Direct HTTPS endpoint
-- **CloudFront Distribution**: Global CDN with routing
-- **IAM Roles**: Lambda permissions for S3 access
+Resources are named using your `config.json` project settings:
+
+- **S3 Bucket**: `{config.aws.s3_bucket}` - Stores COG tiles and STAC metadata
+- **Lambda Function**: `{config.project.name}-titiler` - TiTiler with STAC extension  
+- **Lambda Function URL**: Direct HTTPS endpoint with CORS
+- **CloudFront Distribution**: Global CDN routing to Lambda + S3
+- **IAM Roles**: `{config.project.name}-titiler-role` - Lambda S3 permissions
 
 ## API Endpoints
 

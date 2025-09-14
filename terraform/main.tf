@@ -9,18 +9,18 @@ terraform {
 }
 
 provider "aws" {
-  region = var.aws_region
+  region = local.aws_region
 }
 
 # ECR repository removed - using ZIP-based Lambda deployment
 
 # S3 Bucket for analysis data
 resource "aws_s3_bucket" "analyses" {
-  bucket = var.s3_bucket != "" ? var.s3_bucket : "${var.project_name}-analyses"
+  bucket = local.s3_bucket
   
   tags = {
-    Project = var.project_name
-    Environment = var.environment
+    Project = local.project_name
+    Environment = local.environment
   }
 }
 
@@ -60,7 +60,7 @@ resource "aws_s3_bucket_cors_configuration" "analyses" {
   cors_rule {
     allowed_headers = ["*"]
     allowed_methods = ["GET", "HEAD"]
-    allowed_origins = var.site_url != "" ? [var.site_url] : ["*"]
+    allowed_origins = local.site_url != "" ? [local.site_url] : ["*"]
     expose_headers  = ["ETag"]
     max_age_seconds = 3000
   }
@@ -68,7 +68,7 @@ resource "aws_s3_bucket_cors_configuration" "analyses" {
 
 # IAM Role for TiTiler Lambda
 resource "aws_iam_role" "titiler_role" {
-  name = "${var.project_name}-titiler-role"
+  name = "${local.project_name}-titiler-role"
   
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -84,14 +84,14 @@ resource "aws_iam_role" "titiler_role" {
   })
 
   tags = {
-    Project = var.project_name
-    Environment = var.environment
+    Project = local.project_name
+    Environment = local.environment
   }
 }
 
 # IAM Policy for TiTiler Lambda to access S3
 resource "aws_iam_role_policy" "titiler_s3" {
-  name = "${var.project_name}-titiler-s3"
+  name = "${local.project_name}-titiler-s3"
   role = aws_iam_role.titiler_role.id
   
   policy = jsonencode({
@@ -142,14 +142,14 @@ resource "aws_s3_object" "lambda_package" {
   etag   = filemd5(local.lambda_package_path)
   
   tags = {
-    Project = var.project_name
-    Environment = var.environment
+    Project = local.project_name
+    Environment = local.environment
     LambdaVersion = substr(local.lambda_package_hash, 0, 16)
   }
 }
 
 resource "aws_lambda_function" "titiler" {
-  function_name = "${var.project_name}-titiler"
+  function_name = "${local.project_name}-titiler"
   role         = aws_iam_role.titiler_role.arn
   timeout      = var.lambda_timeout
   memory_size  = var.lambda_memory_size
@@ -166,8 +166,8 @@ resource "aws_lambda_function" "titiler" {
   environment {
     variables = {
       S3_BUCKET = aws_s3_bucket.analyses.bucket
-      PROJECT_NAME = var.project_name
-      SITE_URL = var.site_url
+      PROJECT_NAME = local.project_name
+      SITE_URL = local.site_url
       # GDAL optimization for Lambda
       GDAL_DISABLE_READDIR_ON_OPEN = "EMPTY_DIR"
       CPL_VSIL_CURL_ALLOWED_EXTENSIONS = ".tif,.tiff,.cog"
@@ -177,8 +177,8 @@ resource "aws_lambda_function" "titiler" {
   }
 
   tags = {
-    Project = var.project_name
-    Environment = var.environment
+    Project = local.project_name
+    Environment = local.environment
   }
 }
 
@@ -189,7 +189,7 @@ resource "aws_lambda_function_url" "titiler" {
   
   cors {
     allow_credentials = true
-    allow_origins     = var.site_url != "" ? [var.site_url] : ["*"]
+    allow_origins     = local.site_url != "" ? [local.site_url] : ["*"]
     allow_methods     = ["GET", "HEAD"]
     allow_headers     = ["*"]
     expose_headers    = ["ETag", "Content-Length", "Content-Type"]
@@ -352,14 +352,14 @@ resource "aws_cloudfront_distribution" "titiler" {
   }
   
   tags = {
-    Project = var.project_name
-    Environment = var.environment
+    Project = local.project_name
+    Environment = local.environment
   }
 }
 
 # CloudFront Origin Access Identity for S3
 resource "aws_cloudfront_origin_access_identity" "analyses" {
-  comment = "OAI for ${var.project_name} analyses bucket"
+  comment = "OAI for ${local.project_name} analyses bucket"
 }
 
 # S3 bucket policy for CloudFront access
