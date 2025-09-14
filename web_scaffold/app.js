@@ -16,7 +16,8 @@ class GeoExhibitMap {
         this.config = {
             pmtilesPath: '../pmtiles/features.pmtiles',
             stacBasePath: '../stac/',
-            tilerBaseUrl: 'https://titiler.xyz' // Default TiTiler instance
+            tilerBaseUrl: 'https://titiler.xyz', // Default TiTiler instance
+            jobId: null // Will be set from URL params or config
         };
         
         this.init();
@@ -327,11 +328,31 @@ class GeoExhibitMap {
     
     // Configuration management
     static loadConfig() {
-        // In production, this could read from a config file or URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Support CloudFront-based deployments
+        const jobId = urlParams.get('job_id') || urlParams.get('jobId');
+        const cloudfrontUrl = urlParams.get('cloudfront') || urlParams.get('tiler');
+        
+        // Build paths based on job ID and CloudFront URL if provided
+        let pmtilesPath = '../pmtiles/features.pmtiles';
+        let stacBasePath = '../stac/';
+        
+        if (cloudfrontUrl && jobId) {
+            // Use CloudFront URLs for deployed infrastructure
+            pmtilesPath = `${cloudfrontUrl}/jobs/${jobId}/pmtiles/features.pmtiles`;
+            stacBasePath = `${cloudfrontUrl}/jobs/${jobId}/stac/`;
+        } else if (jobId) {
+            // Use relative paths with specific job ID
+            pmtilesPath = `../jobs/${jobId}/pmtiles/features.pmtiles`;
+            stacBasePath = `../jobs/${jobId}/stac/`;
+        }
+        
         return {
-            pmtilesPath: new URLSearchParams(window.location.search).get('pmtiles') || '../pmtiles/features.pmtiles',
-            stacBasePath: new URLSearchParams(window.location.search).get('stac') || '../stac/',
-            tilerBaseUrl: new URLSearchParams(window.location.search).get('tiler') || 'https://titiler.xyz'
+            pmtilesPath: urlParams.get('pmtiles') || pmtilesPath,
+            stacBasePath: urlParams.get('stac') || stacBasePath,
+            tilerBaseUrl: cloudfrontUrl || urlParams.get('tiler') || 'https://titiler.xyz',
+            jobId: jobId
         };
     }
 }
