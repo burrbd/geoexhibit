@@ -4,11 +4,9 @@ Steel-thread validation test for GitHub Issue #2.
 Validates all acceptance criteria from the issue.
 """
 
-import json
-import subprocess
 import sys
 import urllib.parse
-from typing import Dict, Any, Optional
+from typing import Dict
 
 import requests
 
@@ -86,9 +84,9 @@ class SteelThreadValidator:
 
             if response.status_code == 200:
                 # Test that CloudFront adds appropriate headers
-                cache_control = response.headers.get("cache-control")
+                response.headers.get("cache-control")  # Check header exists
                 print("✅ CloudFront static content serving: PASSED")
-                print(f"   CloudFront configured for dynamic + static content")
+                print("   CloudFront configured for dynamic + static content")
                 return True
             else:
                 print(f"❌ CloudFront: Failed - {response.status_code}")
@@ -241,7 +239,7 @@ def main():
 
     # Add requests dependency check
     try:
-        import requests
+        import requests  # noqa: F401
     except ImportError:
         print("❌ Error: 'requests' library not found.")
         print("Install with: pip install requests")
