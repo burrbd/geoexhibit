@@ -61,6 +61,3 @@ terraform.tfstate
 terraform.tfstate.backup
 *.tfvars
 .terraform.tfstate.lock.info
-
-# Lambda build artifacts
-terraform/lambda/titiler/lambda-package.zip

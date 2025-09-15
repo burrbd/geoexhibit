@@ -33,7 +33,7 @@ plan: init
 build-lambda:
 	@echo "Building TiTiler Lambda package..."
 	docker build -t geoexhibit-titiler lambda/titiler/
-	docker run --rm --entrypoint cat geoexhibit-titiler /tmp/lambda-package.zip > lambda/titiler/lambda-package.zip
+	docker run --rm --entrypoint="" geoexhibit-titiler cat /tmp/lambda-package.zip > lambda/titiler/lambda-package.zip
 	@echo "Lambda package built: lambda/titiler/lambda-package.zip"
 
 # Deploy infrastructure only
