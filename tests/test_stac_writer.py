@@ -96,9 +96,11 @@ def test_create_stac_item():
     primary_asset = primary_assets[0]
     assert primary_asset.href.startswith("s3://test-bucket/")
     assert "jobs/job-123/assets/item-456/analysis.tif" in primary_asset.href
-    
+
     # Check that roles are correct for TiTiler compatibility
-    assert primary_asset.roles == ["primary"], f"Expected ['primary'] but got {primary_asset.roles}"
+    assert primary_asset.roles == [
+        "primary"
+    ], f"Expected ['primary'] but got {primary_asset.roles}"
 
 
 def test_create_stac_item_with_additional_assets():
@@ -199,14 +201,20 @@ def test_stac_item_validation():
         if asset.roles and "primary" in asset.roles
     ]
     assert len(primary_assets) == 1, "Item should have exactly one primary COG asset"
-    
+
     primary_asset = primary_assets[0]
-    assert primary_asset.href.startswith("s3://"), f"Primary asset HREF should be S3 URL, got {primary_asset.href}"
+    assert primary_asset.href.startswith(
+        "s3://"
+    ), f"Primary asset HREF should be S3 URL, got {primary_asset.href}"
     assert "jobs/" in primary_asset.href, "Primary asset HREF should contain jobs path"
-    assert primary_asset.href.endswith(".tif"), f"Primary asset HREF should end with .tif, got {primary_asset.href}"
-    
-    # Check that roles are correct for TiTiler compatibility  
-    assert primary_asset.roles == ["primary"], f"Expected ['primary'] for TiTiler compatibility, got {primary_asset.roles}"
+    assert primary_asset.href.endswith(
+        ".tif"
+    ), f"Primary asset HREF should end with .tif, got {primary_asset.href}"
+
+    # Check that roles are correct for TiTiler compatibility
+    assert primary_asset.roles == [
+        "primary"
+    ], f"Expected ['primary'] for TiTiler compatibility, got {primary_asset.roles}"
 
 
 def test_collection_item_links_have_proper_hrefs():
@@ -219,58 +227,67 @@ def test_collection_item_links_have_proper_hrefs():
 
     # Find item links in the collection
     item_links = [link for link in collection.links if link.rel == "item"]
-    
+
     # Should have one item link for our test plan
     assert len(item_links) == 1
-    
+
     item_link = item_links[0]
-    
+
     # The href should not be null and should be a proper relative path
     assert item_link.href is not None, "Collection item link href should not be null"
-    assert item_link.href == "items/item-456.json", f"Expected 'items/item-456.json', got '{item_link.href}'"
+    assert (
+        item_link.href == "items/item-456.json"
+    ), f"Expected 'items/item-456.json', got '{item_link.href}'"
     assert item_link.media_type == "application/json"
 
 
 def test_collection_item_links_multiple_items():
     """Test that Collection item links work correctly with multiple items."""
-    from datetime import datetime, timezone
-    
+
     # Create a plan with multiple items
     plan = PublishPlan(
         collection_id="test_collection_multi",
         job_id="job-456",
         items=[
             _create_test_publish_item_with_id("item-001"),
-            _create_test_publish_item_with_id("item-002"), 
-            _create_test_publish_item_with_id("item-003")
+            _create_test_publish_item_with_id("item-002"),
+            _create_test_publish_item_with_id("item-003"),
         ],
         collection_metadata={
             "title": "Multi Item Test Collection",
             "description": "Test with multiple items",
         },
     )
-    
+
     config = _create_test_config()
     result = write_stac_catalog(plan, config)
     collection = result["collection"]["object"]
 
     # Find all item links
     item_links = [link for link in collection.links if link.rel == "item"]
-    
+
     # Should have three item links
     assert len(item_links) == 3
-    
+
     # Check that all hrefs are proper relative paths and not null
-    expected_hrefs = {"items/item-001.json", "items/item-002.json", "items/item-003.json"}
+    expected_hrefs = {
+        "items/item-001.json",
+        "items/item-002.json",
+        "items/item-003.json",
+    }
     actual_hrefs = {link.href for link in item_links}
-    
+
     assert actual_hrefs == expected_hrefs
-    
+
     # Verify none of the hrefs are null
     for link in item_links:
         assert link.href is not None, "Collection item link href should not be null"
-        assert link.href.startswith("items/"), f"Item href should start with 'items/', got '{link.href}'"
-        assert link.href.endswith(".json"), f"Item href should end with '.json', got '{link.href}'"
+        assert link.href.startswith(
+            "items/"
+        ), f"Item href should start with 'items/', got '{link.href}'"
+        assert link.href.endswith(
+            ".json"
+        ), f"Item href should end with '.json', got '{link.href}'"
 
 
 def test_collection_validates_with_proper_item_links():
@@ -286,13 +303,15 @@ def test_collection_validates_with_proper_item_links():
         collection.validate()
     except Exception as e:
         assert False, f"Collection validation failed: {e}"
-    
+
     # Double-check that item links are properly formed
     item_links = [link for link in collection.links if link.rel == "item"]
     for link in item_links:
         assert link.href is not None, "Item link href should not be null"
         assert isinstance(link.href, str), "Item link href should be a string"
-        assert link.href.startswith("items/"), "Item link href should be relative path starting with 'items/'"
+        assert link.href.startswith(
+            "items/"
+        ), "Item link href should be relative path starting with 'items/'"
 
 
 def test_issue_16_regression_no_null_hrefs():
@@ -304,37 +323,52 @@ def test_issue_16_regression_no_null_hrefs():
     collection_dict = result["collection"]["object"].to_dict()
 
     # Check that the collection JSON contains no null hrefs
-    item_links = [link for link in collection_dict.get("links", []) if link.get("rel") == "item"]
-    
+    item_links = [
+        link for link in collection_dict.get("links", []) if link.get("rel") == "item"
+    ]
+
     assert len(item_links) > 0, "Collection should have at least one item link"
-    
+
     for link in item_links:
         href = link.get("href")
         assert href is not None, f"Item link href should not be null: {link}"
         assert href != "null", f"Item link href should not be string 'null': {link}"
-        assert isinstance(href, str), f"Item link href should be string, got {type(href)}: {link}"
+        assert isinstance(
+            href, str
+        ), f"Item link href should be string, got {type(href)}: {link}"
         assert href.endswith(".json"), f"Item link href should end with .json: {link}"
-        
+
     # Verify items also have proper links without null hrefs
     items = result["items"]
     for item_result in items:
         from geoexhibit.stac_writer import _fix_item_link_hrefs
+
         item_dict = _fix_item_link_hrefs(item_result["object"].to_dict())
         links = item_dict.get("links", [])
-        
+
         for link in links:
             href = link.get("href")
-            assert href is not None, f"Item link href should not be null in item {item_dict.get('id')}: {link}"
-            assert href != "null", f"Item link href should not be string 'null' in item {item_dict.get('id')}: {link}"
-            assert isinstance(href, str), f"Item link href should be string in item {item_dict.get('id')}: {link}"
-            
+            assert (
+                href is not None
+            ), f"Item link href should not be null in item {item_dict.get('id')}: {link}"
+            assert (
+                href != "null"
+            ), f"Item link href should not be string 'null' in item {item_dict.get('id')}: {link}"
+            assert isinstance(
+                href, str
+            ), f"Item link href should be string in item {item_dict.get('id')}: {link}"
+
             # Verify that relative paths are correct (not absolute)
             rel = link.get("rel")
             if rel in ["root", "collection"]:
-                assert href == "../collection.json", f"Expected '../collection.json' for {rel} link, got '{href}'"
+                assert (
+                    href == "../collection.json"
+                ), f"Expected '../collection.json' for {rel} link, got '{href}'"
             elif rel == "self":
-                item_id = item_dict.get('id')
-                assert href == f"{item_id}.json", f"Expected '{item_id}.json' for self link, got '{href}'"
+                item_id = item_dict.get("id")
+                assert (
+                    href == f"{item_id}.json"
+                ), f"Expected '{item_id}.json' for self link, got '{href}'"
 
 
 def _create_test_config() -> GeoExhibitConfig:
