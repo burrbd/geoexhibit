@@ -61,6 +61,13 @@ deploy-lambda: build-lambda
 # Deploy everything (checks for lambda package first)
 deploy: check-lambda-package init
 	terraform apply -auto-approve
+	@echo ""
+	@echo "🎉 Deployment completed! Updating configuration..."
+	@terraform output -raw cloudfront_url > .cloudfront_url.txt
+	@echo "CloudFront URL: $$(cat .cloudfront_url.txt)"
+	@echo ""
+	@echo "🌐 Test steel thread:"
+	@echo "python3 steel_thread_test.py $$(cat .cloudfront_url.txt) <job_id>"
 
 # Check if lambda package exists before deploy
 check-lambda-package:
