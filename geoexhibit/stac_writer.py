@@ -250,22 +250,26 @@ def write_stac_catalog(
         # Remove any auto-generated links that might have null hrefs
         item.links = []
         
-        # Add root link (pointing to collection)
+        # Add root link (pointing to collection) - set the target object directly to avoid resolution issues
         root_link = pystac.Link(
             rel="root",
             target="../collection.json",
             media_type="application/json",
             title="Root collection"
         )
+        # Set the target object directly to avoid PySTAC trying to resolve the link during validation
+        root_link._target_object = collection
         item.add_link(root_link)
         
-        # Add parent/collection link
+        # Add parent/collection link - set the target object directly
         collection_link = pystac.Link(
             rel="collection",
             target="../collection.json",
             media_type="application/json",
             title="Parent collection"
         )
+        # Set the target object directly to avoid PySTAC trying to resolve the link during validation
+        collection_link._target_object = collection
         item.add_link(collection_link)
         
         # Add self link
@@ -287,6 +291,15 @@ def write_stac_catalog(
 
         collection_path = stac_dir / "collection.json"
         item_paths = [items_dir / f"{item.id}.json" for item in items]
+        
+        # Actually write files to disk when output_dir is provided
+        import json
+        with open(collection_path, 'w', encoding='utf-8') as f:
+            json.dump(collection.to_dict(), f, indent=2)
+            
+        for item, item_path in zip(items, item_paths):
+            with open(item_path, 'w', encoding='utf-8') as f:
+                json.dump(item.to_dict(), f, indent=2)
     else:
         collection_path = Path(layout.collection_path)
         item_paths = [Path(layout.item_path(item.id)) for item in items]
