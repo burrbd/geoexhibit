@@ -196,6 +196,92 @@ def test_stac_item_validation():
         assert False, "Valid STAC item should pass validation"
 
 
+def test_collection_item_links_have_proper_hrefs():
+    """Test that STAC Collection item links have proper relative hrefs, not null."""
+    plan = _create_test_plan()
+    config = _create_test_config()
+
+    result = write_stac_catalog(plan, config)
+    collection = result["collection"]["object"]
+
+    # Find item links in the collection
+    item_links = [link for link in collection.links if link.rel == "item"]
+    
+    # Should have one item link for our test plan
+    assert len(item_links) == 1
+    
+    item_link = item_links[0]
+    
+    # The href should not be null and should be a proper relative path
+    assert item_link.href is not None, "Collection item link href should not be null"
+    assert item_link.href == "items/item-456.json", f"Expected 'items/item-456.json', got '{item_link.href}'"
+    assert item_link.media_type == "application/json"
+
+
+def test_collection_item_links_multiple_items():
+    """Test that Collection item links work correctly with multiple items."""
+    from datetime import datetime, timezone
+    
+    # Create a plan with multiple items
+    plan = PublishPlan(
+        collection_id="test_collection_multi",
+        job_id="job-456",
+        items=[
+            _create_test_publish_item_with_id("item-001"),
+            _create_test_publish_item_with_id("item-002"), 
+            _create_test_publish_item_with_id("item-003")
+        ],
+        collection_metadata={
+            "title": "Multi Item Test Collection",
+            "description": "Test with multiple items",
+        },
+    )
+    
+    config = _create_test_config()
+    result = write_stac_catalog(plan, config)
+    collection = result["collection"]["object"]
+
+    # Find all item links
+    item_links = [link for link in collection.links if link.rel == "item"]
+    
+    # Should have three item links
+    assert len(item_links) == 3
+    
+    # Check that all hrefs are proper relative paths and not null
+    expected_hrefs = {"items/item-001.json", "items/item-002.json", "items/item-003.json"}
+    actual_hrefs = {link.href for link in item_links}
+    
+    assert actual_hrefs == expected_hrefs
+    
+    # Verify none of the hrefs are null
+    for link in item_links:
+        assert link.href is not None, "Collection item link href should not be null"
+        assert link.href.startswith("items/"), f"Item href should start with 'items/', got '{link.href}'"
+        assert link.href.endswith(".json"), f"Item href should end with '.json', got '{link.href}'"
+
+
+def test_collection_validates_with_proper_item_links():
+    """Test that STAC Collection validates successfully with proper item link hrefs."""
+    plan = _create_test_plan()
+    config = _create_test_config()
+
+    result = write_stac_catalog(plan, config)
+    collection = result["collection"]["object"]
+
+    # This should not raise - the collection should validate successfully
+    try:
+        collection.validate()
+    except Exception as e:
+        assert False, f"Collection validation failed: {e}"
+    
+    # Double-check that item links are properly formed
+    item_links = [link for link in collection.links if link.rel == "item"]
+    for link in item_links:
+        assert link.href is not None, "Item link href should not be null"
+        assert isinstance(link.href, str), "Item link href should be a string"
+        assert link.href.startswith("items/"), "Item link href should be relative path starting with 'items/'"
+
+
 def _create_test_config() -> GeoExhibitConfig:
     """Create a test configuration."""
     config_data = {
@@ -235,6 +321,20 @@ def _create_test_publish_item() -> PublishItem:
 
     return PublishItem(
         item_id="item-456",
+        feature=_create_test_feature(),
+        timespan=TimeSpan(start=datetime(2023, 9, 15, tzinfo=timezone.utc)),
+        analyzer_output=analyzer_output,
+    )
+
+
+def _create_test_publish_item_with_id(item_id: str) -> PublishItem:
+    """Create a test PublishItem with a specific item_id."""
+    analyzer_output = AnalyzerOutput(
+        primary_cog_asset=AssetSpec(key="analysis", href="/analysis.tif")
+    )
+
+    return PublishItem(
+        item_id=item_id,
         feature=_create_test_feature(),
         timespan=TimeSpan(start=datetime(2023, 9, 15, tzinfo=timezone.utc)),
         analyzer_output=analyzer_output,
