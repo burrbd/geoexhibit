@@ -55,7 +55,9 @@ module = [
     "numpy.*",
     "rasterio.*", 
     "shapely.*",
-    "pystac.extensions.*"
+    "pystac.extensions.*",
+    "boto3.*",
+    "botocore.*"
 ]
 ignore_missing_imports = true
 

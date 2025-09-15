@@ -24,24 +24,32 @@ from .publish_plan import PublishPlan, PublishItem
 logger = logging.getLogger(__name__)
 
 
-def _fix_item_link_hrefs(item_dict: dict) -> dict:
+def _fix_item_link_hrefs(item_dict: Dict[str, Any]) -> Dict[str, Any]:
     """Fix item link hrefs to use proper relative paths instead of resolved absolute paths."""
-    item_id = item_dict.get('id', '')
-    for link in item_dict.get('links', []):
-        if link.get('rel') == 'root' and link.get('href', '').endswith('/collection.json'):
-            link['href'] = '../collection.json'
-        elif link.get('rel') == 'collection' and link.get('href', '').endswith('/collection.json'):
-            link['href'] = '../collection.json'
-        elif link.get('rel') == 'self' and link.get('href', '').endswith(f'/{item_id}.json'):
-            link['href'] = f'{item_id}.json'
+    item_id = item_dict.get("id", "")
+    for link in item_dict.get("links", []):
+        if link.get("rel") == "root" and link.get("href", "").endswith(
+            "/collection.json"
+        ):
+            link["href"] = "../collection.json"
+        elif link.get("rel") == "collection" and link.get("href", "").endswith(
+            "/collection.json"
+        ):
+            link["href"] = "../collection.json"
+        elif link.get("rel") == "self" and link.get("href", "").endswith(
+            f"/{item_id}.json"
+        ):
+            link["href"] = f"{item_id}.json"
     return item_dict
 
 
-def _fix_collection_link_hrefs(collection_dict: dict) -> dict:
+def _fix_collection_link_hrefs(collection_dict: Dict[str, Any]) -> Dict[str, Any]:
     """Fix collection link hrefs to use proper relative paths instead of resolved absolute paths."""
-    for link in collection_dict.get('links', []):
-        if link.get('rel') in ['root', 'self'] and link.get('href', '').endswith('/collection.json'):
-            link['href'] = 'collection.json'
+    for link in collection_dict.get("links", []):
+        if link.get("rel") in ["root", "self"] and link.get("href", "").endswith(
+            "/collection.json"
+        ):
+            link["href"] = "collection.json"
     return collection_dict
 
 
@@ -184,7 +192,7 @@ def create_stac_item(
     # Use the roles as specified by the analyzer - don't force add "data" and "primary"
     # The analyzer should set the appropriate roles for the intended use case
     primary_roles = list(primary_asset.roles or ["primary"])
-    
+
     # Ensure "primary" role is present for TiTiler compatibility
     if "primary" not in primary_roles:
         primary_roles.append("primary")
@@ -233,22 +241,22 @@ def write_stac_catalog(
     layout = CanonicalLayout(plan.job_id)
 
     collection = create_stac_collection(plan, config, layout)
-    
+
     # Add self link to collection to prevent null href issues
     collection_self_link = pystac.Link(
         rel="self",
         target="collection.json",
         media_type="application/json",
-        title="This collection"
+        title="This collection",
     )
     collection.add_link(collection_self_link)
-    
+
     # Add root link to collection (pointing to itself for a standalone collection)
     collection_root_link = pystac.Link(
         rel="root",
         target="collection.json",
-        media_type="application/json", 
-        title="Root collection"
+        media_type="application/json",
+        title="Root collection",
     )
     collection.add_link(collection_root_link)
 
@@ -256,7 +264,7 @@ def write_stac_catalog(
     for publish_item in plan.items:
         item = create_stac_item(publish_item, collection, config, layout)
         items.append(item)
-    
+
     # Manually create item links in collection with proper relative hrefs
     # This prevents PySTAC from creating null hrefs in automatic links
     for item in items:
@@ -264,43 +272,43 @@ def write_stac_catalog(
             rel="item",
             target=f"items/{item.id}.json",
             media_type="application/json",
-            title=f"Item {item.id}"
+            title=f"Item {item.id}",
         )
         collection.add_link(item_link)
-    
+
     # Manually create necessary links in items without null hrefs
     for item in items:
         # Remove any auto-generated links that might have null hrefs
         item.links = []
-        
+
         # Add root link (pointing to collection) - set the target object directly to avoid resolution issues
         root_link = pystac.Link(
             rel="root",
             target="../collection.json",
             media_type="application/json",
-            title="Root collection"
+            title="Root collection",
         )
         # Set the target object directly to avoid PySTAC trying to resolve the link during validation
         root_link._target_object = collection
         item.add_link(root_link)
-        
+
         # Add parent/collection link - set the target object directly
         collection_link = pystac.Link(
             rel="collection",
             target="../collection.json",
             media_type="application/json",
-            title="Parent collection"
+            title="Parent collection",
         )
         # Set the target object directly to avoid PySTAC trying to resolve the link during validation
         collection_link._target_object = collection
         item.add_link(collection_link)
-        
+
         # Add self link
         self_link = pystac.Link(
             rel="self",
             target=f"{item.id}.json",
             media_type="application/json",
-            title=f"Item {item.id}"
+            title=f"Item {item.id}",
         )
         item.add_link(self_link)
 
@@ -314,14 +322,15 @@ def write_stac_catalog(
 
         collection_path = stac_dir / "collection.json"
         item_paths = [items_dir / f"{item.id}.json" for item in items]
-        
+
         # Actually write files to disk when output_dir is provided
         import json
-        with open(collection_path, 'w', encoding='utf-8') as f:
+
+        with open(collection_path, "w", encoding="utf-8") as f:
             json.dump(collection.to_dict(), f, indent=2)
-            
+
         for item, item_path in zip(items, item_paths):
-            with open(item_path, 'w', encoding='utf-8') as f:
+            with open(item_path, "w", encoding="utf-8") as f:
                 # Fix item links to have proper relative hrefs in the JSON output
                 item_dict = _fix_item_link_hrefs(item.to_dict())
                 json.dump(item_dict, f, indent=2)
