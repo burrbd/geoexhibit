@@ -12,7 +12,11 @@ from botocore.exceptions import ClientError, NoCredentialsError
 from .config import GeoExhibitConfig
 from .layout import CanonicalLayout
 from .publish_plan import PublishPlan
-from .stac_writer import write_stac_catalog, _fix_collection_link_hrefs, _fix_item_link_hrefs
+from .stac_writer import (
+    write_stac_catalog,
+    _fix_collection_link_hrefs,
+    _fix_item_link_hrefs,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -329,9 +333,9 @@ class LocalPublisher(Publisher):
 
         self._copy_assets(plan, layout)
 
-        stac_data = write_stac_catalog(plan, self.config, self.output_dir)
-        # Note: write_stac_catalog already writes the files to disk when output_dir is provided,
+        # write_stac_catalog already writes the files to disk when output_dir is provided,
         # with proper href corrections applied. No need to call _write_stac_files.
+        write_stac_catalog(plan, self.config, self.output_dir)
 
         if plan.pmtiles_path:
             self._copy_pmtiles(plan, layout)
