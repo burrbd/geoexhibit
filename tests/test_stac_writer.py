@@ -311,7 +311,8 @@ def test_issue_16_regression_no_null_hrefs():
     # Verify items also have proper links without null hrefs
     items = result["items"]
     for item_result in items:
-        item_dict = item_result["object"].to_dict()
+        from geoexhibit.stac_writer import _fix_item_link_hrefs
+        item_dict = _fix_item_link_hrefs(item_result["object"].to_dict())
         links = item_dict.get("links", [])
         
         for link in links:
@@ -319,6 +320,14 @@ def test_issue_16_regression_no_null_hrefs():
             assert href is not None, f"Item link href should not be null in item {item_dict.get('id')}: {link}"
             assert href != "null", f"Item link href should not be string 'null' in item {item_dict.get('id')}: {link}"
             assert isinstance(href, str), f"Item link href should be string in item {item_dict.get('id')}: {link}"
+            
+            # Verify that relative paths are correct (not absolute)
+            rel = link.get("rel")
+            if rel in ["root", "collection"]:
+                assert href == "../collection.json", f"Expected '../collection.json' for {rel} link, got '{href}'"
+            elif rel == "self":
+                item_id = item_dict.get('id')
+                assert href == f"{item_id}.json", f"Expected '{item_id}.json' for self link, got '{href}'"
 
 
 def _create_test_config() -> GeoExhibitConfig:

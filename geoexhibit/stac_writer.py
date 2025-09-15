@@ -24,6 +24,19 @@ from .publish_plan import PublishPlan, PublishItem
 logger = logging.getLogger(__name__)
 
 
+def _fix_item_link_hrefs(item_dict: dict) -> dict:
+    """Fix item link hrefs to use proper relative paths instead of resolved absolute paths."""
+    item_id = item_dict.get('id', '')
+    for link in item_dict.get('links', []):
+        if link.get('rel') == 'root' and link.get('href', '').endswith('/collection.json'):
+            link['href'] = '../collection.json'
+        elif link.get('rel') == 'collection' and link.get('href', '').endswith('/collection.json'):
+            link['href'] = '../collection.json'
+        elif link.get('rel') == 'self' and link.get('href', '').endswith(f'/{item_id}.json'):
+            link['href'] = f'{item_id}.json'
+    return item_dict
+
+
 class HrefResolver:
     """
     Enforces GeoExhibit HREF rules using canonical layout:
@@ -299,7 +312,9 @@ def write_stac_catalog(
             
         for item, item_path in zip(items, item_paths):
             with open(item_path, 'w', encoding='utf-8') as f:
-                json.dump(item.to_dict(), f, indent=2)
+                # Fix item links to have proper relative hrefs in the JSON output
+                item_dict = _fix_item_link_hrefs(item.to_dict())
+                json.dump(item_dict, f, indent=2)
     else:
         collection_path = Path(layout.collection_path)
         item_paths = [Path(layout.item_path(item.id)) for item in items]
