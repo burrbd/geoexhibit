@@ -72,11 +72,15 @@ def test_steel_thread_sequence(cloudfront_url: str, job_id: str) -> bool:
     if item_links:
         item_href = item_links[0].get('href', '')
         # Resolve relative href
-        if item_href.startswith('../'):
+        if item_href and item_href.startswith('../'):
             item_url = f"{cloudfront_url}/jobs/{job_id}/stac/{item_href[3:]}"
-        else:
+        elif item_href:
             item_url = f"{cloudfront_url}/jobs/{job_id}/stac/{item_href}"
-    else:
+        else:
+            print("   ⚠️  Item link has no href, falling back to S3 discovery")
+            item_links = []  # Fall through to S3 discovery
+    
+    if not item_links:
         # Fallback: try to find an item by listing
         print("   📋 No item links in collection, checking S3...")
         try:
