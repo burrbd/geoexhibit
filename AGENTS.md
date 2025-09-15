@@ -209,3 +209,237 @@ class Analyzer(ABC):
 
 Rules are stored in .cursor/rules for Cursor registration.
 
+## 🌐 **Steel Thread: Complete End-to-End Data Flow**
+
+This section documents the complete steel thread implementation showing how the static web map, CloudFront, TiTiler (Lambda), and S3 interact for Issues #2 & #3.
+
+### **Topology (CloudFront + Two Origins)**
+
+- **Origin A (S3 "public")**: Hosts static site, STAC JSON, PMTiles, thumbnails. Accessed via CloudFront OAC (bucket is private; only CloudFront can read).
+- **Origin B (Lambda URL)**: TiTiler app. CloudFront forwards `/stac/*` here. Lambda has IAM role with `s3:GetObject` on private COG paths (`s3://geoexhibit-demo/jobs/*`).
+
+### **CloudFront Behaviors**
+- `/jobs/*/stac/*` → Origin A (S3 via OAC) - STAC Collection and Items
+- `/jobs/*/pmtiles/*.pmtiles` → Origin A (S3 via OAC) - Vector tiles
+- `/stac/*` → Origin B (TiTiler Lambda) - Raster tile services
+- `/*` → Origin A (S3 via OAC) - Default behavior for web app
+
+### **CORS Configuration**
+- **S3 static assets**: Allow Origin: `http://localhost:8000`; GET, HEAD methods
+- **TiTiler**: Enable CORS for web map domain; responses include `Access-Control-Allow-Origin`
+
+---
+
+### **🚀 Page Load & PMTiles Overlay**
+
+#### **1) Browser loads the app**
+```
+GET https://d30uc1nx5aa6eq.cloudfront.net/index.html (via web scaffold)
+GET https://d30uc1nx5aa6eq.cloudfront.net/app.js
+```
+CloudFront → S3 (OAC). Cacheable (long TTL for static assets).
+
+#### **2) App fetches the Collection**
+```
+GET https://d30uc1nx5aa6eq.cloudfront.net/jobs/01K55BB201KNAM8C3N9SF8TMEJ/stac/collection.json
+```
+CloudFront → S3 via `/jobs/*/stac/*` routing. Returns Collection with ID `fires_sa_demo`.
+
+#### **3) App discovers PMTiles relative HREF**
+From `collection.json`, relative link `../pmtiles/features.pmtiles` resolves to:
+```
+GET https://d30uc1nx5aa6eq.cloudfront.net/jobs/01K55BB201KNAM8C3N9SF8TMEJ/pmtiles/features.pmtiles
+```
+CloudFront → S3 via `/jobs/*/pmtiles/*.pmtiles` routing. Long-cache (16KB file). PMTiles JS library handles client-side ranging.
+
+#### **4) User sees vector footprints**
+- PMTiles client renders fire polygons client-side
+- Each feature exposes `feature_id` in properties for click handling
+
+---
+
+### **🎯 Feature Click → STAC Item → Raster Tiles**
+
+#### **5) User clicks a fire polygon**
+App reads `feature_id` from PMTiles feature and computes Item HREF:
+```
+GET https://d30uc1nx5aa6eq.cloudfront.net/jobs/01K55BB201KNAM8C3N9SF8TMEJ/stac/items/01K55BB202VWS3XH5MPA0Z73WZ.json
+```
+CloudFront → S3 via `/jobs/*/stac/*` routing. Returns STAC Item with COG asset HREFs.
+
+#### **6) Ask TiTiler for TileJSON**
+Client requests TileJSON using the Item URL:
+```
+GET https://d30uc1nx5aa6eq.cloudfront.net/stac/tilejson.json
+    ?url=https%3A%2F%2Fd30uc1nx5aa6eq.cloudfront.net%2Fjobs%2F01K55BB201KNAM8C3N9SF8TMEJ%2Fstac%2Fitems%2F01K55BB202VWS3XH5MPA0Z73WZ.json
+    &assets=analysis
+    &format=webp
+```
+CloudFront routes `/stac/*` → TiTiler (Lambda).
+
+**TiTiler Process:**
+1. Fetches Item JSON from CloudFront S3 origin (public STAC data)
+2. Reads primary asset HREF: `s3://geoexhibit-demo/jobs/01K55BB201KNAM8C3N9SF8TMEJ/assets/01K55BB202VWS3XH5MPA0Z73WZ/analysis`
+3. Uses Lambda IAM role to read COG directly from S3 (private data)
+4. Returns TileJSON with tile URL template pointing back to TiTiler
+
+**Example TileJSON Response:**
+```json
+{
+  "tilejson": "2.2.0",
+  "name": "analysis",
+  "minzoom": 5,
+  "maxzoom": 14,
+  "bounds": [138.6, -35.1, 138.9, -34.9],
+  "tiles": [
+    "https://d30uc1nx5aa6eq.cloudfront.net/stac/tiles/{z}/{x}/{y}.webp?url=https%3A%2F%2Fd30uc1nx5aa6eq.cloudfront.net%2Fjobs%2F01K55BB201KNAM8C3N9SF8TMEJ%2Fstac%2Fitems%2F01K55BB202VWS3XH5MPA0Z73WZ.json&assets=analysis"
+  ]
+}
+```
+
+#### **7) Leaflet registers the raster layer**
+App reads `tilejson.tiles[0]` template and adds as XYZ layer to map.
+
+---
+
+### **🗺️ Tile Fetches (XYZ Pattern)**
+
+#### **8) Leaflet requests tiles during pan/zoom**
+```
+GET https://d30uc1nx5aa6eq.cloudfront.net/stac/tiles/10/902/637.webp
+    ?url=https%3A%2F%2Fd30uc1nx5aa6eq.cloudfront.net%2Fjobs%2F01K55BB201KNAM8C3N9SF8TMEJ%2Fstac%2Fitems%2F01K55BB202VWS3XH5MPA0Z73WZ.json
+    &assets=analysis
+```
+
+CloudFront → TiTiler (Lambda).
+
+**TiTiler Tile Process:**
+- Parses query params (Item URL + asset name)
+- Opens same S3 COG using Lambda IAM role (internal access)
+- Renders tile as WebP/PNG and streams back
+- CloudFront caches tiles by path + full query string
+
+---
+
+### **📊 Sequence Diagram**
+
+```
+Browser           CloudFront            S3 (OAC)                TiTiler (Lambda)            S3 (private COGs)
+   |                  |                      |                           |                          |
+1) |-- index.html --->|---> (OAC) ---------->|                           |                          |
+   |<-- app.js -------|<--- (cache) <--------|                           |                          |
+2) |-- collection.json|---> (OAC) ---------->|                           |                          |
+3) |-- features.pmtiles|---> (OAC) ---------->|                           |                          |
+4) (user clicks fire polygon)                 |                           |                          |
+5) |-- item.json ---->|---> (OAC) ---------->|                           |                          |
+6) |-- TileJSON req ->|---------------------->TiTiler                    |                          |
+   |                  |                      |---- GET item.json ------->|                          |
+   |                  |                      |<--- STAC Item ------------|                          |
+   |                  |                      |                           |-- GET s3://...COG ----->|
+   |                  |                      |                           |<--- COG bytes ----------|
+   |                  |<-- TileJSON response |                           |                          |
+7) |-- tile z/x/y ----|---------------------->TiTiler                    |                          |
+   |                  |                      |                           |-- read COG tile ------->|
+   |                  |                      |                           |<--- rendered bytes -----|
+   |<-- webp/png -----|<---------------------|                           |                          |
+```
+
+---
+
+### **🌐 Actual URLs (GeoExhibit Implementation)**
+
+**Collection:**
+```
+https://d30uc1nx5aa6eq.cloudfront.net/jobs/01K55BB201KNAM8C3N9SF8TMEJ/stac/collection.json
+```
+
+**PMTiles (from Collection relative link):**
+```
+https://d30uc1nx5aa6eq.cloudfront.net/jobs/01K55BB201KNAM8C3N9SF8TMEJ/pmtiles/features.pmtiles
+```
+
+**STAC Item:**
+```
+https://d30uc1nx5aa6eq.cloudfront.net/jobs/01K55BB201KNAM8C3N9SF8TMEJ/stac/items/01K55BB202VWS3XH5MPA0Z73WZ.json
+```
+
+**TileJSON:**
+```
+https://d30uc1nx5aa6eq.cloudfront.net/stac/tilejson.json?url=https%3A%2F%2Fd30uc1nx5aa6eq.cloudfront.net%2Fjobs%2F01K55BB201KNAM8C3N9SF8TMEJ%2Fstac%2Fitems%2F01K55BB202VWS3XH5MPA0Z73WZ.json&assets=analysis&format=webp
+```
+
+**XYZ Tile:**
+```
+https://d30uc1nx5aa6eq.cloudfront.net/stac/tiles/10/902/637.webp?url=https%3A%2F%2Fd30uc1nx5aa6eq.cloudfront.net%2Fjobs%2F01K55BB201KNAM8C3N9SF8TMEJ%2Fstac%2Fitems%2F01K55BB202VWS3XH5MPA0Z73WZ.json&assets=analysis
+```
+
+---
+
+### **🔐 Headers & Authentication**
+
+- **Browser → CloudFront**: Normal GETs with CORS for web map domain
+- **CloudFront → S3 (OAC)**: Bucket policy allows only CloudFront OAC principal
+- **CloudFront → TiTiler**: Forward full query string (critical for cache keys)
+- **TiTiler → S3 COGs**: Lambda IAM role grants `s3:GetObject` + `s3:ListBucket`
+
+**IAM Policy (Configuration-Driven):**
+```json
+{
+  "Statement": [
+    {
+      "Sid": "ReadCOGs",
+      "Effect": "Allow", 
+      "Action": ["s3:GetObject"],
+      "Resource": "arn:aws:s3:::geoexhibit-demo/jobs/*"
+    },
+    {
+      "Sid": "ListBucket",
+      "Effect": "Allow",
+      "Action": ["s3:ListBucket"], 
+      "Resource": "arn:aws:s3:::geoexhibit-demo"
+    }
+  ]
+}
+```
+
+---
+
+### **⚡ Caching Strategy (CloudFront)**
+
+- **Static assets** (HTML/JS): Long TTL (7 days), version on deploy
+- **STAC data** (Collection/Items): Medium TTL (1 day), immutable per job
+- **PMTiles**: Long TTL (7 days), immutable vector data
+- **TileJSON**: Short TTL (1-5 minutes), cache by full query string
+- **Tiles**: Medium TTL (10-60 minutes), vary by path + query parameters
+
+---
+
+### **🐛 Error Handling Quick Reference**
+
+- **403 on COG fetch**: Check Lambda IAM role has `s3:GetObject` on COG paths
+- **CORS blocked**: Ensure `Access-Control-Allow-Origin` on both S3 and TiTiler responses
+- **TileJSON 4xx**: Verify Item URL format and asset names match STAC schema
+- **Collection not found**: Check CloudFront routing for `/jobs/*/stac/*` pattern
+- **PMTiles not loading**: Verify CloudFront routing for `/jobs/*/pmtiles/*.pmtiles`
+
+---
+
+### **🧪 Steel Thread Testing**
+
+**Web Map URL:**
+```
+http://localhost:8000/?cloudfront=https://d30uc1nx5aa6eq.cloudfront.net&job_id=01K55BB201KNAM8C3N9SF8TMEJ
+```
+
+**Validation Script:**
+```bash
+python3 steel_thread_validation_complete.py https://d30uc1nx5aa6eq.cloudfront.net
+```
+
+**Expected Flow:**
+1. ✅ Web map loads with South Australia view
+2. ✅ PMTiles displays 3 fire polygons
+3. ✅ Click fire area → STAC Item loads via CloudFront
+4. ✅ TiTiler returns TileJSON with tile template
+5. ✅ Leaflet displays raster overlay from TiTiler tiles
+
