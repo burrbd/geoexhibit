@@ -291,16 +291,9 @@ def write_stac_catalog(
         collection_path = Path(layout.collection_path)
         item_paths = [Path(layout.item_path(item.id)) for item in items]
 
-    # Note: Validation temporarily disabled for testing
-    # The fix for issue #16 (null hrefs) is working, but validation
-    # requires files to exist on disk which they don't during testing
-    try:
-        _validate_stac_collection(collection)
-        for item in items:
-            _validate_stac_item(item, config)
-    except Exception as e:
-        logger.warning(f"STAC validation failed (may be due to missing files during testing): {e}")
-        # Continue without failing since the core fix is working
+    _validate_stac_collection(collection)
+    for item in items:
+        _validate_stac_item(item, config)
 
     logger.info(f"Generated STAC catalog with {len(items)} items")
 
