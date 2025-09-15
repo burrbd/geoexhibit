@@ -34,12 +34,12 @@ class DemoAnalyzer(Analyzer):
         cog_path = self._generate_cog(feature, timespan, feature_id)
 
         primary_asset = AssetSpec(
-            key="analysis",
+            key="analysis.tif",
             href=str(cog_path),
             title="Demo Analysis Result",
             description=f"Demo analysis result for feature {feature_id}",
             media_type="image/tiff; application=geotiff; profile=cloud-optimized",
-            roles=["data"],
+            roles=["primary"],
         )
 
         extra_properties = {

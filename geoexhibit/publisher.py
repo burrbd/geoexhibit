@@ -266,7 +266,6 @@ class S3Publisher(Publisher):
                     for asset in assets.values()
                     if isinstance(asset.get("roles"), list)
                     and "primary" in asset["roles"]
-                    and "data" in asset["roles"]
                 ]
 
                 if not primary_assets:

@@ -89,19 +89,22 @@ def test_create_stac_item():
     primary_assets = [
         asset
         for asset in item.assets.values()
-        if asset.roles and "primary" in asset.roles and "data" in asset.roles
+        if asset.roles and "primary" in asset.roles
     ]
     assert len(primary_assets) == 1
 
     primary_asset = primary_assets[0]
     assert primary_asset.href.startswith("s3://test-bucket/")
-    assert "jobs/job-123/assets/item-456/analysis" in primary_asset.href
+    assert "jobs/job-123/assets/item-456/analysis.tif" in primary_asset.href
+    
+    # Check that roles are correct for TiTiler compatibility
+    assert primary_asset.roles == ["primary"], f"Expected ['primary'] but got {primary_asset.roles}"
 
 
 def test_create_stac_item_with_additional_assets():
     """Test STAC Item creation with additional assets."""
     analyzer_output = AnalyzerOutput(
-        primary_cog_asset=AssetSpec(key="analysis", href="/analysis.tif"),
+        primary_cog_asset=AssetSpec(key="analysis.tif", href="/analysis.tif"),
         additional_assets=[
             AssetSpec(
                 key="thumbnail.png",
@@ -128,7 +131,7 @@ def test_create_stac_item_with_additional_assets():
     item = create_stac_item(publish_item, collection, config, layout)
 
     assert len(item.assets) == 2
-    assert "analysis" in item.assets
+    assert "analysis.tif" in item.assets
     assert "thumbnail.png" in item.assets
 
     thumb_asset = item.assets["thumbnail.png"]
@@ -193,13 +196,17 @@ def test_stac_item_validation():
     primary_assets = [
         asset
         for asset in item.assets.values()
-        if asset.roles and "primary" in asset.roles and "data" in asset.roles
+        if asset.roles and "primary" in asset.roles
     ]
     assert len(primary_assets) == 1, "Item should have exactly one primary COG asset"
     
     primary_asset = primary_assets[0]
     assert primary_asset.href.startswith("s3://"), f"Primary asset HREF should be S3 URL, got {primary_asset.href}"
     assert "jobs/" in primary_asset.href, "Primary asset HREF should contain jobs path"
+    assert primary_asset.href.endswith(".tif"), f"Primary asset HREF should end with .tif, got {primary_asset.href}"
+    
+    # Check that roles are correct for TiTiler compatibility  
+    assert primary_asset.roles == ["primary"], f"Expected ['primary'] for TiTiler compatibility, got {primary_asset.roles}"
 
 
 def test_collection_item_links_have_proper_hrefs():
@@ -364,7 +371,7 @@ def _create_test_feature():
 def _create_test_publish_item() -> PublishItem:
     """Create a test PublishItem."""
     analyzer_output = AnalyzerOutput(
-        primary_cog_asset=AssetSpec(key="analysis", href="/analysis.tif")
+        primary_cog_asset=AssetSpec(key="analysis.tif", href="/analysis.tif")
     )
 
     return PublishItem(
@@ -378,7 +385,7 @@ def _create_test_publish_item() -> PublishItem:
 def _create_test_publish_item_with_id(item_id: str) -> PublishItem:
     """Create a test PublishItem with a specific item_id."""
     analyzer_output = AnalyzerOutput(
-        primary_cog_asset=AssetSpec(key="analysis", href="/analysis.tif")
+        primary_cog_asset=AssetSpec(key="analysis.tif", href="/analysis.tif")
     )
 
     return PublishItem(
