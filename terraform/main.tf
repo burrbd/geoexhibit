@@ -166,7 +166,7 @@ resource "aws_lambda_function" "titiler" {
   s3_key          = local.lambda_package_exists ? aws_s3_object.lambda_package[0].key : null
   s3_object_version = local.lambda_package_exists ? aws_s3_object.lambda_package[0].version_id : null
   source_code_hash = local.lambda_package_exists ? local.lambda_package_hash : null
-  handler          = "steel_thread_handler.handler"
+  handler          = "handler.handler"
   runtime          = "python3.12"
   
   environment {
