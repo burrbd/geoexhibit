@@ -104,20 +104,17 @@ resource "aws_iam_role_policy" "titiler_s3" {
         Resource = "${aws_s3_bucket.analyses.arn}/jobs/*"
       },
       {
+        Sid = "ListBucket" 
+        Effect = "Allow"
+        Action = ["s3:ListBucket"]
+        Resource = "${aws_s3_bucket.analyses.arn}"
+      },
+      {
         Sid = "ReadSTACData"
         Effect = "Allow"
         Action = ["s3:GetObject"]
         Resource = "${aws_s3_bucket.analyses.arn}/jobs/*/stac/*"
       },
-      {
-        Sid = "ReadDemoBucket"
-        Effect = "Allow"
-        Action = ["s3:GetObject", "s3:ListBucket"]
-        Resource = [
-          "arn:aws:s3:::geoexhibit-demo",
-          "arn:aws:s3:::geoexhibit-demo/*"
-        ]
-      }
     ]
   })
 }
