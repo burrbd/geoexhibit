@@ -289,33 +289,33 @@ resource "aws_cloudfront_distribution" "titiler" {
     compress = true
   }
   
-            # S3 cache behavior for static STAC data files (collections, items, catalogs)
-          ordered_cache_behavior {
-            path_pattern     = "/stac-data/*"
-            allowed_methods  = ["GET", "HEAD", "OPTIONS"]
-            cached_methods   = ["GET", "HEAD"]
-            target_origin_id = "s3-analyses"
-            viewer_protocol_policy = "redirect-to-https"
+  # S3 cache behavior for STAC data files (collections, items)
+  ordered_cache_behavior {
+    path_pattern     = "/jobs/*/stac/*"
+    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "s3-analyses"
+    viewer_protocol_policy = "redirect-to-https"
 
-            forwarded_values {
-              query_string = false
-              headers      = []
+    forwarded_values {
+      query_string = false
+      headers      = []
 
-              cookies {
-                forward = "none"
-              }
-            }
+      cookies {
+        forward = "none"
+      }
+    }
 
-            default_ttl = 86400      # 1 day
-            max_ttl     = 604800     # 7 days
-            min_ttl     = 0
+    default_ttl = 86400      # 1 day
+    max_ttl     = 604800     # 7 days  
+    min_ttl     = 0
 
-            compress = true
-          }
+    compress = true
+  }
 
   # S3 cache behavior for PMTiles (enable Range requests)
   ordered_cache_behavior {
-    path_pattern     = "*.pmtiles"
+    path_pattern     = "/jobs/*/pmtiles/*.pmtiles"
     allowed_methods  = ["GET", "HEAD", "OPTIONS"]
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = "s3-analyses"
