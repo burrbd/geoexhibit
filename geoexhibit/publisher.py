@@ -12,7 +12,7 @@ from botocore.exceptions import ClientError, NoCredentialsError
 from .config import GeoExhibitConfig
 from .layout import CanonicalLayout
 from .publish_plan import PublishPlan
-from .stac_writer import write_stac_catalog
+from .stac_writer import write_stac_catalog, _fix_collection_link_hrefs, _fix_item_link_hrefs
 
 logger = logging.getLogger(__name__)
 
@@ -95,14 +95,18 @@ class S3Publisher(Publisher):
         collection_path = stac_data["collection"]["path"]
         collection_obj = stac_data["collection"]["object"]
 
-        collection_json = json.dumps(collection_obj.to_dict(), indent=2)
+        # Fix collection link hrefs before uploading
+        collection_dict = _fix_collection_link_hrefs(collection_obj.to_dict())
+        collection_json = json.dumps(collection_dict, indent=2)
         self._upload_content(collection_json, collection_path, "application/json")
 
         for item_data in stac_data["items"]:
             item_path = item_data["path"]
             item_obj = item_data["object"]
 
-            item_json = json.dumps(item_obj.to_dict(), indent=2)
+            # Fix item link hrefs before uploading
+            item_dict = _fix_item_link_hrefs(item_obj.to_dict())
+            item_json = json.dumps(item_dict, indent=2)
             self._upload_content(item_json, item_path, "application/json")
 
         logger.info(
@@ -327,7 +331,8 @@ class LocalPublisher(Publisher):
         self._copy_assets(plan, layout)
 
         stac_data = write_stac_catalog(plan, self.config, self.output_dir)
-        self._write_stac_files(stac_data)
+        # Note: write_stac_catalog already writes the files to disk when output_dir is provided,
+        # with proper href corrections applied. No need to call _write_stac_files.
 
         if plan.pmtiles_path:
             self._copy_pmtiles(plan, layout)

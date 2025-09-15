@@ -37,6 +37,14 @@ def _fix_item_link_hrefs(item_dict: dict) -> dict:
     return item_dict
 
 
+def _fix_collection_link_hrefs(collection_dict: dict) -> dict:
+    """Fix collection link hrefs to use proper relative paths instead of resolved absolute paths."""
+    for link in collection_dict.get('links', []):
+        if link.get('rel') in ['root', 'self'] and link.get('href', '').endswith('/collection.json'):
+            link['href'] = 'collection.json'
+    return collection_dict
+
+
 class HrefResolver:
     """
     Enforces GeoExhibit HREF rules using canonical layout:
