@@ -181,9 +181,11 @@ def create_stac_item(
         publish_item.item_id, primary_asset.key
     )
 
-    primary_roles = list(primary_asset.roles or [])
-    if "data" not in primary_roles:
-        primary_roles.append("data")
+    # Use the roles as specified by the analyzer - don't force add "data" and "primary"
+    # The analyzer should set the appropriate roles for the intended use case
+    primary_roles = list(primary_asset.roles or ["primary"])
+    
+    # Ensure "primary" role is present for TiTiler compatibility
     if "primary" not in primary_roles:
         primary_roles.append("primary")
 
@@ -362,12 +364,12 @@ def _validate_stac_item(item: pystac.Item, config: GeoExhibitConfig) -> None:
         primary_assets = [
             asset
             for asset in item.assets.values()
-            if asset.roles and "primary" in asset.roles and "data" in asset.roles
+            if asset.roles and "primary" in asset.roles
         ]
 
         if not primary_assets:
             raise ValueError(
-                f"STAC Item {item.id} missing primary COG asset with 'data' and 'primary' roles"
+                f"STAC Item {item.id} missing primary COG asset with 'primary' role"
             )
 
         if len(primary_assets) > 1:
