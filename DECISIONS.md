@@ -156,5 +156,26 @@ This document records numbered implementation decisions with rationale and links
 - 100% coverage on core modules (stac_writer, publisher) for critical paths
 
 **Implementation**: [`pyproject.toml:pytest.ini_options`](pyproject.toml)  
-**Current Coverage**: 96%+ across all modules  
+**Current Coverage**: 96%+ across all modules
+
+## Decision 13: Steel Thread End-to-End Testing Strategy
+
+**Decision**: Implement simple end-to-end test that mimics web map sequence instead of complex validation frameworks.
+
+**Rationale**:
+- Steel thread test should mirror actual user workflow (web map sequence)
+- Simpler test script easier to maintain and understand
+- Direct validation of the data flow documented in AGENTS.md
+- Avoids over-engineering for infrastructure validation
+
+**Flow Tested**:
+1. Collection JSON loading (CloudFront → S3)
+2. PMTiles vector layer access  
+3. STAC Item loading (feature click simulation)
+4. TiTiler TileJSON generation
+5. Raster tile rendering
+
+**Implementation**: [`steel_thread_test.py`](steel_thread_test.py)
+
+**Commit**: [Issue #3 implementation](https://github.com/burrbd/geoexhibit/pull/14)  
 **Commit**: [ebae30e](https://github.com/burrbd/geoexhibit/commit/ebae30e)
