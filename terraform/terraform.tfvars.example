@@ -4,7 +4,7 @@
 # NOTE: Most configuration is now read from config.json automatically!
 # Only specify these variables if you need to override config.json values.
 
-# Path to GeoExhibit config.json (default: ../examples/config.json)
+# Path to GeoExhibit config.json (default: ../demo/config.json)
 # config_file = "../path/to/your/config.json"
 
 # Environment override (default: "dev")
