@@ -184,7 +184,9 @@ def test_cli_integration():
 
             assert result.exit_code == 0
             assert "DRY RUN MODE" in result.output
-            assert "cli-test-bucket" in result.output
+            assert (
+                "Local directory" in result.output
+            )  # Local output mode doesn't show S3 bucket
 
         finally:
             os.chdir(original_cwd)

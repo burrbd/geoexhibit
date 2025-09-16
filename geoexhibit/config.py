@@ -198,7 +198,7 @@ def create_default_config() -> Dict[str, Any]:
         "time": {
             "mode": "declarative",
             "extractor": "attribute_date",
-            "field": "properties.date",
+            "field": "properties.fire_date",
             "format": "auto",
             "tz": "UTC",
         },
