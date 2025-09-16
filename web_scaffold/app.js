@@ -255,6 +255,12 @@ class GeoExhibitMap {
         try {
             this.updateStatus(`Loading raster for ${featureId}...`, 'loading');
             
+            // Check if TiTiler is configured
+            if (!this.config.tilerBaseUrl) {
+                this.updateStatus('⚠️ No TiTiler configured - raster display not available', 'error');
+                return;
+            }
+            
             // Find corresponding STAC item
             const item = this.items.find(item => 
                 item.properties && item.properties.feature_id === featureId
