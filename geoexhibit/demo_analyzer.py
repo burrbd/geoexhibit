@@ -34,7 +34,7 @@ class DemoAnalyzer(Analyzer):
         cog_path = self._generate_cog(feature, timespan, feature_id)
 
         primary_asset = AssetSpec(
-            key="analysis.tif",
+            key="analysis",
             href=str(cog_path),
             title="Demo Analysis Result",
             description=f"Demo analysis result for feature {feature_id}",
@@ -95,10 +95,11 @@ class DemoAnalyzer(Analyzer):
             "predictor": 2,
         }
 
-        with rasterio.open(output_path, "w", **profile) as dst:
-            dst.write(data, 1)
-            dst.build_overviews([2, 4, 8], rasterio.enums.Resampling.average)
-            dst.update_tags(ns="rio_overview", resampling="average")
+        with rasterio.Env(GDAL_TIFF_OVR_BLOCKSIZE=256):
+            with rasterio.open(output_path, "w", **profile) as dst:
+                dst.write(data, 1)
+                dst.build_overviews([2, 4, 8], rasterio.enums.Resampling.average)
+                dst.update_tags(ns="rio_overview", resampling="average")
 
         return output_path
 
