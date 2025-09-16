@@ -21,7 +21,7 @@ aws configure
 # 3. Configure terraform (uses your config.json automatically!)
 cp terraform.tfvars.example terraform.tfvars
 # Edit terraform.tfvars only if you need to:
-# - Override config.json path (default: ../examples/config.json)  
+# - Override config.json path (default: ../demo/config.json)  
 # - Override environment (default: "dev")
 # - Adjust Lambda settings (timeout, memory)
 
@@ -42,7 +42,7 @@ The Makefile automates AWS CLI and Terraform installation for agent environments
 
 **🎯 Unified Configuration**: Terraform automatically reads values from your GeoExhibit `config.json` file!
 
-**Configuration source**: `../examples/config.json` (or override with `config_file` variable)
+**Configuration source**: `../demo/config.json` (or override with `config_file` variable)
 
 **Automatic mapping**:
 - `project_name` ← `config.json → project.name`

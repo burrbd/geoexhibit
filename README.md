@@ -7,30 +7,83 @@ A minimal, test-driven Python toolkit for publishing static STAC metadata and ra
 
 ## 🚀 Quick Start
 
-1. **Create configuration:**
-   ```bash
-   geoexhibit config --create
-   # Edit config.json with your S3 bucket and settings
-   ```
+### Step 1: Install All Dependencies
+```bash
+# Core GeoExhibit package
+pip install -e ".[dev]"
 
-2. **Add your features:**
-   ```bash
-   # Place your features in: features.json, features.geojson, data.json, etc.
-   # Supports: GeoJSON, NDJSON, GeoPackage, Shapefile
-   ```
+# Required for raster analysis and AWS publishing
+pip install rasterio numpy shapely boto3 jsonschema
 
-3. **Run the pipeline:**
-   ```bash
-   geoexhibit run config.json
-   # Default: publishes to S3
-   # Local output: geoexhibit run config.json --local-out ./output
-   ```
+# Optional: PMTiles generation (requires tippecanoe)
+# Ubuntu/Debian: sudo apt install tippecanoe
+# macOS: brew install tippecanoe
+# Windows: See https://github.com/mapbox/tippecanoe#installation
 
-4. **View your map:**
-   ```bash
-   # Open web_scaffold/index.html in browser
-   # Point to your published STAC collection
-   ```
+# Development tools setup (optional)
+./setup_dev.sh
+```
+
+### Step 2: Create Configuration
+```bash
+geoexhibit config --create
+# Edit config.json with your S3 bucket and settings
+# See demo/config.json for reference
+```
+
+### Step 3: Add Your Features
+```bash
+# Place your features in: features.json, features.geojson, data.json, etc.
+# Supports: GeoJSON, NDJSON, GeoPackage, Shapefile
+# See demo/features.json for example fire analysis data
+```
+
+### Step 4: Publish STAC Analysis
+```bash
+# Configure AWS credentials
+export AWS_ACCESS_KEY_ID="your_access_key"
+export AWS_SECRET_ACCESS_KEY="your_secret_key" 
+export AWS_DEFAULT_REGION="your_region"
+
+# Publish to S3 (production)
+geoexhibit run config.json
+
+# OR test locally first
+geoexhibit run config.json --local-out ./output
+
+# Preview without executing
+geoexhibit run config.json --dry-run
+```
+
+### Step 5: Deploy Infrastructure (Optional)
+```bash
+# For web map with TiTiler support
+cd terraform/
+
+# Install prerequisites (if needed)
+make install-prerequisites  # AWS CLI v2, Terraform, Docker
+
+# Set up AWS permissions
+./setup-aws-permissions.sh
+
+# Configure terraform
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars if needed (uses ../examples/config.json by default)
+
+# Deploy complete infrastructure
+make deploy
+
+# Get CloudFront URL for web map
+terraform output cloudfront_url
+```
+
+### Step 6: View Your Map
+```bash
+# Open web_scaffold/index.html in browser
+# Configure with your CloudFront URL and job ID
+# Use date slider to explore temporal analyses
+# Click features to load TiTiler raster overlays
+```
 
 ## 🔥 Demo: Fire Analysis Example
 
@@ -55,7 +108,7 @@ export AWS_DEFAULT_REGION="your_region"
 ```
 
 ### Step 3: Set Up Demo Configuration
-The repo includes `examples/config.json` with fire analysis settings:
+The repo includes `demo/config.json` with fire analysis settings:
 
 ```json
 {
@@ -82,7 +135,7 @@ The repo includes `examples/config.json` with fire analysis settings:
 Update the `s3_bucket` to your bucket name.
 
 ### Step 4: Demo Features
-The repo includes `features.json` with 3 sample fire areas:
+The repo includes `demo/features.json` with 3 sample fire areas:
 - Fire Area A (Sept 15, 2023) - Polygon in South Australia  
 - Fire Area B (Oct 2, 2023) - Polygon with moderate severity
 - Fire Point (Nov 20, 2023) - Point location with low severity
@@ -90,20 +143,20 @@ The repo includes `features.json` with 3 sample fire areas:
 ### Step 5: Run the Demo
 ```bash
 # Publish to S3 (default)
-geoexhibit run examples/config.json
+geoexhibit run demo/config.json
 
 # Or test locally first
-geoexhibit run examples/config.json --local-out ./demo_output
+geoexhibit run demo/config.json --local-out ./demo_output
 
 # Preview without executing
-geoexhibit run examples/config.json --dry-run
+geoexhibit run demo/config.json --dry-run
 ```
 
 ### Step 6: Verify Results
 ```bash
 # The pipeline outputs a job ID like: 01K4XQ0N2DB35WHWZCAK3H0WAT
 # Verify the published structure:
-python verify_aws_publishing.py examples/config.json <job_id>
+python demo/verify_aws_publishing.py demo/config.json <job_id>
 ```
 
 ### Expected Output Structure
@@ -132,7 +185,7 @@ s3://your-bucket/jobs/<job_id>/
 ```
 
 ### What the Demo Does
-1. **Loads 3 fire features** from `features.json`
+1. **Loads 3 fire features** from `demo/features.json`
 2. **Extracts fire dates** using declarative time provider (`properties.fire_date`)  
 3. **Generates synthetic COG analyses** using DemoAnalyzer (dNBR-style rasters)
 4. **Creates STAC Collection + 3 Items** with proper primary COG assets
@@ -280,9 +333,10 @@ pytest tests/test_*.py    # Specific test files
 
 ## 📚 Examples
 
-See `examples/` directory:
+See `demo/` directory:
 - `config.json` - Complete configuration example
 - `features.json` - Sample fire analysis features
+- Verification and testing scripts
 
 ## 🔗 Links
 
