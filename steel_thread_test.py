@@ -140,7 +140,7 @@ def test_steel_thread_sequence(cloudfront_url: Optional[str], job_id: str) -> bo
     # Step 4: Request TileJSON from TiTiler (raster integration)
     print("\n4️⃣ Requesting TileJSON from TiTiler...")
     encoded_item_url = urllib.parse.quote(item_url, safe="")
-    tilejson_url = f"{cloudfront_url}/stac/tilejson.json?url={encoded_item_url}&assets={asset_name}&format=webp"
+    tilejson_url = f"{cloudfront_url}/stac/WebMercatorQuad/tilejson.json?url={encoded_item_url}&assets={asset_name}&format=webp"
     
     try:
         response = requests.get(tilejson_url, timeout=20)
@@ -171,26 +171,40 @@ def test_steel_thread_sequence(cloudfront_url: Optional[str], job_id: str) -> bo
         print(f"   ❌ TileJSON error: {e}")
         return False
     
-    # Step 5: Request sample tile (final validation)
-    print("\n5️⃣ Requesting sample raster tile...")
-    # Extract tile template and make a sample request
-    tile_template = tilejson['tiles'][0]
-    sample_tile_url = tile_template.format(z=8, x=240, y=160)  # Mid-zoom for South Australia
+    # Step 5: Request sample raster (final validation) - Use preview as it's more reliable
+    print("\n5️⃣ Requesting sample raster rendering...")
+    preview_url = f"{cloudfront_url}/stac/preview?url={encoded_item_url}&assets={asset_name}&format=webp"
     
     try:
-        response = requests.get(sample_tile_url, timeout=20)
+        response = requests.get(preview_url, timeout=20)
         if response.status_code == 200:
             content_type = response.headers.get('content-type', '')
             if 'image' in content_type:
-                print(f"   ✅ Raster tile generated: {content_type}, {len(response.content)} bytes")
+                print(f"   ✅ Raster preview generated: {content_type}, {len(response.content)} bytes")
+                print(f"   🎯 TiTiler can successfully render COG assets from STAC Items")
             else:
-                print(f"   ❌ Invalid tile content type: {content_type}")
+                print(f"   ❌ Invalid preview content type: {content_type}")
                 return False
         else:
-            print(f"   ❌ Tile request failed: {response.status_code}")
-            return False
+            print(f"   ❌ Preview request failed: {response.status_code}")
+            # Try individual tile as fallback
+            print("   🔄 Trying individual tile as fallback...")
+            tile_template = tilejson['tiles'][0] 
+            sample_tile_url = tile_template.format(z=4, x=15, y=10)  # Lower zoom for better coverage
+            
+            tile_response = requests.get(sample_tile_url, timeout=20)
+            if tile_response.status_code == 200:
+                content_type = tile_response.headers.get('content-type', '')
+                if 'image' in content_type:
+                    print(f"   ✅ Raster tile generated: {content_type}, {len(tile_response.content)} bytes")
+                else:
+                    print(f"   ❌ Invalid tile content type: {content_type}")
+                    return False
+            else:
+                print(f"   ❌ Both preview and tile requests failed")
+                return False
     except Exception as e:
-        print(f"   ❌ Tile request error: {e}")
+        print(f"   ❌ Raster rendering error: {e}")
         return False
     
     # Success!

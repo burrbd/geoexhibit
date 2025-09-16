@@ -237,7 +237,7 @@ resource "aws_cloudfront_distribution" "titiler" {
   
   # Lambda cache behavior for tile endpoints
   ordered_cache_behavior {
-    path_pattern     = "/tiles/*"
+    path_pattern     = "/stac/tiles/*"
     allowed_methods  = ["GET", "HEAD", "OPTIONS"]
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = "lambda-titiler"
@@ -255,6 +255,32 @@ resource "aws_cloudfront_distribution" "titiler" {
     # Cache tiles for a long time
     default_ttl = 86400      # 1 day
     max_ttl     = 604800     # 7 days
+    min_ttl     = 0
+    
+    # Enable compression
+    compress = true
+  }
+
+  # Lambda cache behavior for STAC API endpoints
+  ordered_cache_behavior {
+    path_pattern     = "/stac/*"
+    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "lambda-titiler"
+    viewer_protocol_policy = "redirect-to-https"
+
+    forwarded_values {
+      query_string = true  # Cache by full query string
+      headers      = []    # No header variation
+      
+      cookies {
+        forward = "none"
+      }
+    }
+    
+    # Medium cache for STAC API responses
+    default_ttl = 300       # 5 minutes
+    max_ttl     = 3600      # 1 hour max
     min_ttl     = 0
     
     # Enable compression
