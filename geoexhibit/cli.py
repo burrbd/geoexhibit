@@ -254,8 +254,15 @@ def _discover_features_file() -> Optional[Path]:
         "input.geojson",
     ]
 
+    # Check current directory first
     for name in common_names:
         path = Path(name)
+        if path.exists():
+            return path
+
+    # Check demo directory as fallback
+    for name in common_names:
+        path = Path("demo") / name
         if path.exists():
             return path
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Simple steel thread test that mimics the web map sequence.
-Tests the exact same flow as described in AGENTS.md steel thread documentation.
+Tests the exact same flow as described in docs/agent-context/AGENTS.md steel thread documentation.
 """
 
 import sys
@@ -14,7 +14,7 @@ import requests
 def test_steel_thread_sequence(cloudfront_url: Optional[str], job_id: str) -> bool:
     """
     Test the exact sequence that the web map follows.
-    Mimics the steel thread flow documented in AGENTS.md.
+    Mimics the steel thread flow documented in docs/agent-context/AGENTS.md.
     """
     print("🎯 Steel Thread End-to-End Test")
     print("=" * 60)

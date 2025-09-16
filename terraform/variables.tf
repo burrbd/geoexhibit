@@ -2,7 +2,7 @@
 variable "config_file" {
   description = "Path to GeoExhibit config.json file"
   type        = string
-  default     = "../examples/config.json"
+  default     = "../demo/config.json"
 }
 
 # Override variables (optional - will use config.json if not specified)
