@@ -39,7 +39,7 @@ class DemoAnalyzer(Analyzer):
             title="Demo Analysis Result",
             description=f"Demo analysis result for feature {feature_id}",
             media_type="image/tiff; application=geotiff; profile=cloud-optimized",
-            roles=["primary"],
+            roles=["data", "primary"],
         )
 
         extra_properties = {
