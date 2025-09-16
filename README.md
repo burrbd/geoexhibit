@@ -77,7 +77,38 @@ make deploy
 terraform output cloudfront_url
 ```
 
-### Step 6: View Your Map
+### Step 6: Verify Published Data
+Two verification tools are provided to validate your published STAC data:
+
+#### AWS Publishing Verification
+```bash
+# The pipeline outputs a job ID like: 01K4XQ0N2DB35WHWZCAK3H0WAT
+# Verify the complete S3 structure and STAC compliance:
+python demo/verify_aws_publishing.py demo/config.json <job_id>
+
+# This script checks:
+# ✅ STAC Collection exists and is valid
+# ✅ All STAC Items are properly structured
+# ✅ Primary COG assets have correct roles ["data", "primary"]
+# ✅ PMTiles file exists (if tippecanoe available)
+# ✅ S3 bucket permissions and access
+```
+
+#### Infrastructure End-to-End Testing
+```bash
+# After deploying infrastructure, test complete steel thread:
+python demo/steel_thread_test.py https://YOUR_CLOUDFRONT_URL
+
+# This script validates:
+# ✅ STAC Collection loads via CloudFront
+# ✅ PMTiles vector tiles accessible
+# ✅ STAC Items load correctly
+# ✅ TiTiler TileJSON generation works
+# ✅ Raster tiles render properly
+# ✅ Complete web map data flow
+```
+
+### Step 7: View Your Map
 ```bash
 # Open web_scaffold/index.html in browser
 # Configure with your CloudFront URL and job ID
@@ -155,7 +186,7 @@ geoexhibit run demo/config.json --dry-run
 ### Step 6: Verify Results
 ```bash
 # The pipeline outputs a job ID like: 01K4XQ0N2DB35WHWZCAK3H0WAT
-# Verify the published structure:
+# Use the verification tools (see Step 6 above for detailed instructions):
 python demo/verify_aws_publishing.py demo/config.json <job_id>
 ```
 
@@ -330,6 +361,52 @@ pytest tests/test_*.py    # Specific test files
 ```
 
 **Coverage**: Currently **96%+** across all modules
+
+## 🔍 Verification Tools
+
+GeoExhibit provides two specialized verification tools located in the `demo/` directory:
+
+### AWS Publishing Verification (`demo/verify_aws_publishing.py`)
+Validates STAC data published to S3 using AWS APIs:
+
+```bash
+python demo/verify_aws_publishing.py <config_file> <job_id>
+
+# Example:
+python demo/verify_aws_publishing.py demo/config.json 01K4XQ0N2DB35WHWZCAK3H0WAT
+```
+
+**What it checks:**
+- ✅ S3 bucket access and permissions
+- ✅ STAC Collection structure and validity
+- ✅ STAC Items with proper geometry and properties
+- ✅ Primary COG assets with TiTiler-compatible roles
+- ✅ PMTiles file existence (when tippecanoe available)
+- ✅ Canonical layout compliance (`jobs/<job_id>/` structure)
+
+**Requirements:** Configured AWS credentials with S3 read access
+
+### Infrastructure End-to-End Testing (`demo/steel_thread_test.py`)
+Tests complete web map data flow through deployed infrastructure:
+
+```bash
+python demo/steel_thread_test.py <cloudfront_url>
+
+# Example:
+python demo/steel_thread_test.py https://d30uc1nx5aa6eq.cloudfront.net
+```
+
+**What it tests:**
+- ✅ STAC Collection loads via CloudFront → S3 routing
+- ✅ PMTiles vector tiles accessible and properly formatted
+- ✅ STAC Items load correctly with valid COG asset references
+- ✅ TiTiler TileJSON generation (CloudFront → Lambda → S3 COGs)
+- ✅ Raster tile rendering (XYZ pattern functionality)
+- ✅ CORS headers and web map compatibility
+
+**Requirements:** Deployed infrastructure (terraform) with published demo data
+
+Both tools follow the steel thread methodology, testing the exact same data flow that the web map uses in production.
 
 ## 📚 Examples
 
