@@ -433,7 +433,7 @@ http://localhost:8000/?cloudfront=https://d30uc1nx5aa6eq.cloudfront.net&job_id=0
 
 **Validation Script:**
 ```bash
-python3 steel_thread_validation_complete.py https://d30uc1nx5aa6eq.cloudfront.net
+python3 steel_thread_test.py https://d30uc1nx5aa6eq.cloudfront.net
 ```
 
 **Expected Flow:**
