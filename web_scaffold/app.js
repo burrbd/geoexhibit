@@ -16,7 +16,7 @@ class GeoExhibitMap {
         this.config = {
             pmtilesPath: '../pmtiles/features.pmtiles',
             stacBasePath: '../stac/',
-            tilerBaseUrl: 'https://kt565oy3ftasvaugwcb4xw6lmy0wsutr.lambda-url.ap-southeast-2.on.aws', // Real deployed TiTiler
+            tilerBaseUrl: 'https://d3rngip79tsjjk.cloudfront.net', // Use CloudFront URL for TiTiler
             jobId: null // Will be set from URL params or config
         };
         
@@ -303,7 +303,7 @@ class GeoExhibitMap {
     }
     
     buildTiTilerUrl(cogHref) {
-        // Convert S3 COG HREF to TiTiler tile URL using correct TileJSON format
+        // Convert S3 COG HREF to TiTiler tile URL using COG endpoint
         // Uses WebMercatorQuad tile matrix set for web maps
         
         const encodedUrl = encodeURIComponent(cogHref);
