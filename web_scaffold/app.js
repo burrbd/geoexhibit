@@ -16,7 +16,7 @@ class GeoExhibitMap {
         this.config = {
             pmtilesPath: '../pmtiles/features.pmtiles',
             stacBasePath: '../stac/',
-            tilerBaseUrl: 'https://d3rngip79tsjjk.cloudfront.net', // Use CloudFront URL for TiTiler
+            tilerBaseUrl: null, // Will be set from URL params or default to relative paths
             jobId: null // Will be set from URL params or config
         };
         
@@ -351,7 +351,7 @@ class GeoExhibitMap {
         return {
             pmtilesPath: urlParams.get('pmtiles') || pmtilesPath,
             stacBasePath: urlParams.get('stac') || stacBasePath,
-            tilerBaseUrl: cloudfrontUrl || urlParams.get('tiler') || 'https://titiler.xyz',
+            tilerBaseUrl: cloudfrontUrl || urlParams.get('tiler') || null, // No default tiler - must be specified
             jobId: jobId
         };
     }
