@@ -45,7 +45,9 @@ def run(config_file: Path, local_out: Optional[Path], dry_run: bool) -> None:
         features_file = _discover_features_file()
         if not features_file:
             if dry_run:
-                click.echo("📥 No features file found (will be required for actual run)")
+                click.echo(
+                    "📥 No features file found (will be required for actual run)"
+                )
                 features_file = Path("features.json")  # Placeholder for dry-run
             else:
                 click.echo(
