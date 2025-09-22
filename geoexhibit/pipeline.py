@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 
 from .config import GeoExhibitConfig
-from .demo_analyzer import create_demo_analyzer
+from . import plugin_registry
 from .orchestrator import create_publish_plan, generate_pmtiles_plan
 from .publisher import create_publisher
 
@@ -36,8 +36,21 @@ def run_geoexhibit_pipeline(
     features = load_and_validate_features(features_file)
     logger.info(f"Loaded {len(features['features'])} features")
 
-    analyzer = create_demo_analyzer()
-    logger.info(f"Created analyzer: {analyzer.name}")
+    # Import demo_analyzer to ensure it's registered (backwards compatibility)
+    from . import demo_analyzer  # noqa: F401
+    
+    try:
+        analyzer_name = config.analyzer_name
+        analyzer = plugin_registry.get_analyzer(analyzer_name)
+        logger.info(f"Created analyzer: {analyzer.name} (plugin: {analyzer_name})")
+    except plugin_registry.PluginNotFoundError as e:
+        logger.error(f"Analyzer plugin error: {e}")
+        available = plugin_registry.list_analyzers()
+        logger.info(f"Available analyzers: {available}")
+        raise
+    except Exception as e:
+        logger.error(f"Failed to create analyzer '{analyzer_name}': {e}")
+        raise
 
     plan = create_publish_plan(features, analyzer, config)
     logger.info(
