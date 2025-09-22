@@ -44,12 +44,16 @@ def run(config_file: Path, local_out: Optional[Path], dry_run: bool) -> None:
         # Auto-discover features file
         features_file = _discover_features_file()
         if not features_file:
-            click.echo(
-                "❌ No features file found. Create features.json or features.geojson"
-            )
-            sys.exit(1)
-
-        click.echo(f"📥 Using features file: {features_file}")
+            if dry_run:
+                click.echo("📥 No features file found (will be required for actual run)")
+                features_file = Path("features.json")  # Placeholder for dry-run
+            else:
+                click.echo(
+                    "❌ No features file found. Create features.json or features.geojson"
+                )
+                sys.exit(1)
+        else:
+            click.echo(f"📥 Using features file: {features_file}")
 
         if dry_run:
             click.echo("🔍 DRY RUN MODE - showing planned actions:")
