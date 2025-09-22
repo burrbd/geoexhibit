@@ -16,6 +16,7 @@ class GeoExhibitConfig:
     stac: Dict[str, Any]
     ids: Dict[str, Any]
     time: Dict[str, Any]
+    analyzer: Dict[str, Any]
 
     @property
     def s3_bucket(self) -> str:
@@ -56,6 +57,11 @@ class GeoExhibitConfig:
         """Get time provider configuration."""
         return self.time
 
+    @property
+    def analyzer_config(self) -> Dict[str, Any]:
+        """Get analyzer configuration."""
+        return self.analyzer
+
 
 def load_config(config_path: Path) -> GeoExhibitConfig:
     """Load and validate configuration from JSON file."""
@@ -70,7 +76,7 @@ def load_config(config_path: Path) -> GeoExhibitConfig:
 
 def validate_config(data: Dict[str, Any]) -> GeoExhibitConfig:
     """Validate configuration data and return GeoExhibitConfig instance."""
-    required_sections = ["project", "aws", "map", "stac", "ids", "time"]
+    required_sections = ["project", "aws", "map", "stac", "ids", "time", "analyzer"]
     for section in required_sections:
         if section not in data:
             raise ValueError(f"Missing required configuration section: {section}")
@@ -80,6 +86,7 @@ def validate_config(data: Dict[str, Any]) -> GeoExhibitConfig:
     _validate_stac_section(data["stac"])
     _validate_ids_section(data["ids"])
     _validate_time_section(data["time"])
+    _validate_analyzer_section(data["analyzer"])
 
     return GeoExhibitConfig(
         project=data["project"],
@@ -88,6 +95,7 @@ def validate_config(data: Dict[str, Any]) -> GeoExhibitConfig:
         stac=data["stac"],
         ids=data["ids"],
         time=data["time"],
+        analyzer=data["analyzer"],
     )
 
 
@@ -172,6 +180,24 @@ def _validate_callable_time_config(time: Dict[str, Any]) -> None:
         raise ValueError("Callable time mode requires 'provider' field")
 
 
+def _validate_analyzer_section(analyzer: Dict[str, Any]) -> None:
+    """Validate analyzer configuration section."""
+    if "name" not in analyzer:
+        raise ValueError("Missing required analyzer field: name")
+    
+    # Set default plugin directories
+    if "plugin_directories" not in analyzer:
+        analyzer["plugin_directories"] = ["analyzers/"]
+    
+    # Ensure plugin_directories is a list
+    if not isinstance(analyzer["plugin_directories"], list):
+        raise ValueError("analyzer.plugin_directories must be a list")
+    
+    # Set default plugin parameters
+    if "parameters" not in analyzer:
+        analyzer["parameters"] = {}
+
+
 def create_default_config() -> Dict[str, Any]:
     """Create a default configuration template."""
     return {
@@ -201,5 +227,10 @@ def create_default_config() -> Dict[str, Any]:
             "field": "properties.fire_date",
             "format": "auto",
             "tz": "UTC",
+        },
+        "analyzer": {
+            "name": "demo_analyzer",
+            "plugin_directories": ["analyzers/"],
+            "parameters": {},
         },
     }

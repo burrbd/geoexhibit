@@ -1,5 +1,6 @@
 """Orchestrator for coordinating feature analysis and publish plan creation."""
 
+import logging
 from pathlib import Path
 from typing import Dict, Any, Optional
 from ulid import new as new_ulid
@@ -7,8 +8,11 @@ from ulid import new as new_ulid
 from .analyzer import Analyzer
 from .config import GeoExhibitConfig
 from .declarative_time import DeclarativeTimeProvider
+from .plugin_registry import get_registry
 from .publish_plan import PublishItem, PublishPlan
 from .time_provider import TimeProvider, create_time_provider
+
+logger = logging.getLogger(__name__)
 
 
 def create_publish_plan(
@@ -188,3 +192,71 @@ def _generate_pmtiles_from_features(
 
     finally:
         Path(temp_geojson).unlink(missing_ok=True)
+
+
+def create_analyzer_from_config(config: GeoExhibitConfig) -> Analyzer:
+    """Create an analyzer instance from configuration.
+    
+    Args:
+        config: GeoExhibit configuration containing analyzer settings
+        
+    Returns:
+        Analyzer instance
+        
+    Raises:
+        ValueError: If analyzer cannot be created or not found
+    """
+    analyzer_config = config.analyzer_config
+    analyzer_name = analyzer_config["name"]
+    plugin_directories = analyzer_config.get("plugin_directories", ["analyzers/"])
+    parameters = analyzer_config.get("parameters", {})
+    
+    registry = get_registry()
+    
+    # Auto-discover plugins from specified directories
+    for plugin_dir in plugin_directories:
+        plugin_path = Path(plugin_dir)
+        if plugin_path.exists():
+            logger.debug(f"Discovering plugins in {plugin_path}")
+            registry.discover_plugins(plugin_path)
+        else:
+            logger.debug(f"Plugin directory {plugin_path} does not exist, skipping")
+    
+    # Handle built-in analyzers
+    if analyzer_name == "demo_analyzer":
+        # Import here to register the demo analyzer
+        from .demo_analyzer import DemoAnalyzer
+        return DemoAnalyzer(**parameters)
+    
+    # Try to create from registry
+    try:
+        return registry.create_analyzer(analyzer_name, **parameters)
+    except ValueError as e:
+        available_analyzers = list(registry.list_analyzers().keys())
+        raise ValueError(
+            f"Failed to create analyzer '{analyzer_name}': {e}. "
+            f"Available analyzers: {available_analyzers}. "
+            f"Make sure the plugin is installed in one of: {plugin_directories}"
+        )
+
+
+def create_publish_plan_from_config(
+    features: Dict[str, Any],
+    config: GeoExhibitConfig,
+    time_provider: Optional[TimeProvider] = None,
+) -> PublishPlan:
+    """Create a complete publish plan from features and configuration.
+    
+    This is a convenience function that creates the analyzer from config
+    and delegates to the main create_publish_plan function.
+    
+    Args:
+        features: GeoJSON FeatureCollection
+        config: GeoExhibit configuration (includes analyzer config)
+        time_provider: Optional time provider (will create from config if None)
+        
+    Returns:
+        PublishPlan ready for publishing
+    """
+    analyzer = create_analyzer_from_config(config)
+    return create_publish_plan(features, analyzer, config, time_provider)

@@ -6,8 +6,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 
 from .config import GeoExhibitConfig
-from .demo_analyzer import create_demo_analyzer
-from .orchestrator import create_publish_plan, generate_pmtiles_plan
+from .orchestrator import create_publish_plan_from_config, generate_pmtiles_plan
 from .publisher import create_publisher
 
 logger = logging.getLogger(__name__)
@@ -36,10 +35,8 @@ def run_geoexhibit_pipeline(
     features = load_and_validate_features(features_file)
     logger.info(f"Loaded {len(features['features'])} features")
 
-    analyzer = create_demo_analyzer()
-    logger.info(f"Created analyzer: {analyzer.name}")
-
-    plan = create_publish_plan(features, analyzer, config)
+    plan = create_publish_plan_from_config(features, config)
+    logger.info(f"Created analyzer from config: {config.analyzer_config['name']}")
     logger.info(
         f"Created publish plan: {plan.item_count} items from {plan.feature_count} features"
     )

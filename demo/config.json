@@ -31,5 +31,10 @@
     "field": "properties.fire_date",
     "format": "auto",
     "tz": "UTC"
+  },
+  "analyzer": {
+    "name": "demo_analyzer",
+    "plugin_directories": ["analyzers/"],
+    "parameters": {}
   }
 }

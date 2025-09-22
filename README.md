@@ -277,6 +277,94 @@ Each STAC Item designates a **primary COG asset** with roles `["data", "primary"
 }
 ```
 
+## 🔌 Plugin Architecture
+
+GeoExhibit supports custom analyzers through a simple plugin system without heavy frameworks.
+
+### Creating a Custom Analyzer Plugin
+
+1. **Create a plugin file** in your `analyzers/` directory:
+
+```python
+# analyzers/my_analyzer.py
+from geoexhibit.analyzer import Analyzer, AnalyzerOutput, AssetSpec
+from geoexhibit.plugin_registry import register
+from geoexhibit.timespan import TimeSpan
+
+@register("my_analysis")
+class MyAnalyzer(Analyzer):
+    """Custom analyzer for specialized analysis."""
+    
+    def __init__(self, parameter1: str = "default", parameter2: int = 42):
+        """Initialize with custom parameters."""
+        self.parameter1 = parameter1
+        self.parameter2 = parameter2
+    
+    def analyze(self, feature, timespan):
+        """Perform your custom analysis here."""
+        # Your analysis logic here
+        # Generate COG file, perform calculations, etc.
+        
+        return AnalyzerOutput(
+            primary_cog_asset=AssetSpec(
+                key="analysis",
+                href="/path/to/your/output.tif",
+                title="My Custom Analysis",
+                roles=["data", "primary"]
+            ),
+            extra_properties={
+                "custom:parameter1": self.parameter1,
+                "custom:analysis_type": "my_analysis"
+            }
+        )
+    
+    @property
+    def name(self):
+        return "my_analysis"
+```
+
+2. **Configure your analyzer** in `config.json`:
+
+```json
+{
+  "analyzer": {
+    "name": "my_analysis",
+    "plugin_directories": ["analyzers/"],
+    "parameters": {
+      "parameter1": "custom_value",
+      "parameter2": 100
+    }
+  }
+}
+```
+
+3. **Run your pipeline**:
+```bash
+geoexhibit run config.json
+```
+
+### Plugin Development Guidelines
+
+- **Interface Compliance**: All plugins must inherit from `geoexhibit.analyzer.Analyzer`
+- **Registration**: Use `@register("unique_name")` decorator to register your plugin
+- **Auto-discovery**: Place plugins in directories specified in `analyzer.plugin_directories`
+- **Parameters**: Support initialization parameters via `analyzer.parameters` config
+- **COG Output**: Return Cloud Optimized GeoTIFF files for TiTiler compatibility
+- **Error Handling**: Provide clear error messages for missing dependencies
+
+### Available Built-in Analyzers
+
+- **`demo_analyzer`** - Synthetic COG generator for testing and demonstration
+- **`example`** - Example plugin showing different pattern generation modes
+
+### Plugin Validation
+
+GeoExhibit automatically validates plugins at runtime:
+- ✅ Inherits from `Analyzer` interface
+- ✅ Implements required methods (`analyze`, `name`)
+- ✅ Has correct method signatures
+- ✅ Provides helpful error messages for missing plugins
+
 ## 🕒 Time Providers
 
 **Declarative (default)** - Zero Python for common cases:
