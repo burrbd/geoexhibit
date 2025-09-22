@@ -10,15 +10,29 @@ curl -s https://bootstrap.pypa.io/get-pip.py | python3 - --user --break-system-p
 # Add local bin to PATH in current session
 export PATH="$HOME/.local/bin:$PATH"
 
-# Set up pre-commit hook
-echo "🪝 Setting up pre-commit hook..."
-if [ ! -f ".git/hooks/pre-commit" ]; then
+# Set up git hooks
+echo "🪝 Setting up git hooks..."
+if [ ! -d ".git/hooks" ]; then
     echo "❌ Git hooks directory not found. Make sure you're in a git repository."
     exit 1
 fi
 
-chmod +x .git/hooks/pre-commit
-echo "✅ Pre-commit hook installed and made executable"
+# Install pre-push hook
+if [ -f "pre-push-hook.sh" ]; then
+    cp pre-push-hook.sh .git/hooks/pre-push
+    chmod +x .git/hooks/pre-push
+    echo "✅ Pre-push hook installed and made executable"
+else
+    echo "⚠️ pre-push-hook.sh not found, skipping pre-push hook installation"
+fi
+
+# Pre-commit hook should already exist
+if [ -f ".git/hooks/pre-commit" ]; then
+    chmod +x .git/hooks/pre-commit
+    echo "✅ Pre-commit hook made executable"
+else
+    echo "⚠️ Pre-commit hook not found in .git/hooks/"
+fi
 
 # Initialize commit counter
 echo "0" > .git/commit_count
@@ -37,6 +51,7 @@ echo "🎉 Development environment setup complete!"
 echo ""
 echo "📋 What this setup provides:"
 echo "  • Pre-commit hook that runs black, ruff, mypy before each commit"
+echo "  • Pre-push hook that runs test suite with coverage before each push"
 echo "  • CI gate check every 4 commits"
 echo "  • Local development tools installed in ~/.local/bin"
 echo ""
