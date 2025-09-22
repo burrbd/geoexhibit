@@ -95,24 +95,64 @@ class AnalyzerRegistry:
                 )
     
     def _auto_discover_plugins(self) -> None:
-        """Auto-discover plugins from analyzers/ directory."""
+        """Auto-discover plugins from multiple sources."""
         try:
-            # Look for analyzers/ directory relative to current working directory
+            # 1. Look for analyzers/ directory in current working directory (local development)
             analyzers_dir = Path.cwd() / "analyzers"
             if analyzers_dir.exists() and analyzers_dir.is_dir():
                 self._scan_directory(analyzers_dir)
+                logger.debug(f"Scanned local analyzers directory: {analyzers_dir}")
             
-            # Also check for analyzers in the current Python path
-            for path in sys.path:
-                path_obj = Path(path)
-                analyzers_path = path_obj / "analyzers"
-                if analyzers_path.exists() and analyzers_path.is_dir():
-                    self._scan_directory(analyzers_path)
+            # 2. Auto-discovery through entry points (pip-installed packages)
+            self._discover_entry_points()
+            
+            # 3. Scan for analyzer modules in Python path (fallback)
+            self._scan_python_path()
         
         except Exception as e:
             logger.warning(f"Plugin auto-discovery failed: {e}")
         finally:
             self._auto_discovered = True
+    
+    def _discover_entry_points(self) -> None:
+        """Discover plugins through setuptools entry points."""
+        try:
+            import pkg_resources
+            for entry_point in pkg_resources.iter_entry_points('geoexhibit.analyzers'):
+                try:
+                    entry_point.load()
+                    logger.debug(f"Loaded analyzer plugin via entry point: {entry_point.name}")
+                except Exception as e:
+                    logger.warning(f"Failed to load entry point {entry_point.name}: {e}")
+        except ImportError:
+            # pkg_resources not available, skip entry point discovery
+            logger.debug("pkg_resources not available, skipping entry point discovery")
+    
+    def _scan_python_path(self) -> None:
+        """Scan Python path for analyzer modules as fallback."""
+        for path in sys.path:
+            path_obj = Path(path)
+            # Look for analyzer modules in site-packages or other locations
+            for pattern in ["*analyzer*.py", "*_analyzer.py", "analyzer_*.py"]:
+                for py_file in path_obj.glob(pattern):
+                    if py_file.is_file() and not py_file.name.startswith("_"):
+                        try:
+                            self._import_module_from_file(py_file)
+                        except Exception as e:
+                            logger.debug(f"Failed to import analyzer module {py_file}: {e}")
+    
+    def _import_module_from_file(self, py_file: Path) -> None:
+        """Import a Python module from file path."""
+        module_name = f"analyzer_{py_file.stem}"
+        if module_name in sys.modules:
+            return  # Already imported
+        
+        spec = importlib.util.spec_from_file_location(module_name, py_file)
+        if spec and spec.loader:
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = module
+            spec.loader.exec_module(module)
+            logger.debug(f"Imported analyzer module: {py_file}")
     
     def _scan_directory(self, directory: Path) -> None:
         """Scan directory for Python modules and import them."""
@@ -121,13 +161,7 @@ class AnalyzerRegistry:
                 continue  # Skip private modules
             
             try:
-                module_name = py_file.stem
-                spec = importlib.util.spec_from_file_location(module_name, py_file)
-                if spec and spec.loader:
-                    module = importlib.util.module_from_spec(spec)
-                    sys.modules[module_name] = module
-                    spec.loader.exec_module(module)
-                    logger.debug(f"Imported plugin module: {py_file}")
+                self._import_module_from_file(py_file)
             except Exception as e:
                 logger.warning(f"Failed to import plugin {py_file}: {e}")
 

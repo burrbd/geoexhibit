@@ -31,5 +31,8 @@
     "field": "properties.fire_date",
     "format": "auto",
     "tz": "UTC"
+  },
+  "analyzer": {
+    "name": "demo"
   }
 }

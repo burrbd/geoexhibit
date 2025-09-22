@@ -16,6 +16,7 @@ class GeoExhibitConfig:
     stac: Dict[str, Any]
     ids: Dict[str, Any]
     time: Dict[str, Any]
+    analyzer: Dict[str, Any]
 
     @property
     def s3_bucket(self) -> str:
@@ -55,6 +56,18 @@ class GeoExhibitConfig:
     def time_config(self) -> Dict[str, Any]:
         """Get time provider configuration."""
         return self.time
+    
+    @property
+    def analyzer_name(self) -> str:
+        """Get analyzer name."""
+        name = self.analyzer.get("name", "demo")
+        assert isinstance(name, str)
+        return name
+    
+    @property
+    def analyzer_config(self) -> Dict[str, Any]:
+        """Get analyzer configuration."""
+        return self.analyzer
 
 
 def load_config(config_path: Path) -> GeoExhibitConfig:
@@ -75,11 +88,16 @@ def validate_config(data: Dict[str, Any]) -> GeoExhibitConfig:
         if section not in data:
             raise ValueError(f"Missing required configuration section: {section}")
 
+    # Analyzer section is optional, defaults to demo analyzer
+    if "analyzer" not in data:
+        data["analyzer"] = {"name": "demo"}
+
     _validate_project_section(data["project"])
     _validate_aws_section(data["aws"])
     _validate_stac_section(data["stac"])
     _validate_ids_section(data["ids"])
     _validate_time_section(data["time"])
+    _validate_analyzer_section(data["analyzer"])
 
     return GeoExhibitConfig(
         project=data["project"],
@@ -88,6 +106,7 @@ def validate_config(data: Dict[str, Any]) -> GeoExhibitConfig:
         stac=data["stac"],
         ids=data["ids"],
         time=data["time"],
+        analyzer=data["analyzer"],
     )
 
 
@@ -172,6 +191,17 @@ def _validate_callable_time_config(time: Dict[str, Any]) -> None:
         raise ValueError("Callable time mode requires 'provider' field")
 
 
+def _validate_analyzer_section(analyzer: Dict[str, Any]) -> None:
+    """Validate analyzer configuration section and set defaults."""
+    if "name" not in analyzer:
+        analyzer["name"] = "demo"
+    
+    # Additional validation can be added here for analyzer-specific parameters
+    # For now, we just ensure the name is a string
+    if not isinstance(analyzer["name"], str):
+        raise ValueError("Analyzer name must be a string")
+
+
 def create_default_config() -> Dict[str, Any]:
     """Create a default configuration template."""
     return {
@@ -201,5 +231,8 @@ def create_default_config() -> Dict[str, Any]:
             "field": "properties.fire_date",
             "format": "auto",
             "tz": "UTC",
+        },
+        "analyzer": {
+            "name": "demo"
         },
     }
