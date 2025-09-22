@@ -12,8 +12,10 @@ from shapely.geometry import shape
 
 from .analyzer import Analyzer, AnalyzerOutput, AssetSpec
 from .timespan import TimeSpan
+from . import plugin_registry
 
 
+@plugin_registry.register("demo")
 class DemoAnalyzer(Analyzer):
     """Demo analyzer that creates a simple raster based on the input geometry."""
 
