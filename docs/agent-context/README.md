@@ -22,13 +22,29 @@ This directory contains all documentation and tools specifically for AI agents w
   - `branch_create.sh` - Create feature branches
   - `Makefile` - Convenient command wrappers
 
-## Quick Agent Onboarding
+## 🚀 **AGENT ONBOARDING (START HERE)**
 
-1. **Read AGENTS.md first** - Contains complete technical context
-2. **Check PROJECT_STATUS.md** - Understand current completion state
-3. **Review DECISIONS.md** - Understand key architectural choices
-4. **Use PLAYBOOK.md** - For GitHub workflow guidance
-5. **Reference ROADMAP.md** - For future development phases
+**New agents MUST read this document first:**
+```
+📖 AGENT_ONBOARDING.md - Complete meta-prompt with mandatory setup and guidelines
+```
+
+This meta-prompt ensures proper:
+- Technical architecture understanding
+- Development environment setup  
+- Testing methodology (unit tests with mocks, coverage enforced by hooks)
+- Code quality standards adherence
+- GitHub workflow compliance
+
+## Additional Context Documents
+
+After completing onboarding, reference these for specific needs:
+
+1. **`AGENTS.md`** - Complete technical architecture overview
+2. **`PROJECT_STATUS.md`** - Current completion status and quality metrics  
+3. **`DECISIONS.md`** - 13 numbered implementation decisions with rationale
+4. **`PLAYBOOK.md`** - GitHub API workflow guide
+5. **`ROADMAP.md`** - Development phases and issue dependencies
 
 ## Usage
 

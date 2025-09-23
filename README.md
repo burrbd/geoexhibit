@@ -328,7 +328,7 @@ pip install -e ".[dev]"
 **Development rules** (enforced by pre-commit + CI):
 - Commit discipline: one unit of code + test per commit
 - Black formatting, ruff linting, mypy type checking
-- 95%+ test coverage requirement
+- Test coverage requirements enforced by pre-push hooks
 - Conventional commits (no noise)
 
 ## 📋 CLI Commands
@@ -360,7 +360,7 @@ pytest --cov=geoexhibit   # With coverage
 pytest tests/test_*.py    # Specific test files
 ```
 
-**Coverage**: Currently **96%+** across all modules
+**Coverage**: See badge above for current coverage status
 
 ## 🔍 Verification Tools
 

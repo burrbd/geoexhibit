@@ -132,7 +132,7 @@ s3://bucket/jobs/<job_id>/
 - **Integration tests**: End-to-end workflow with LocalPublisher (no AWS)
 - **S3 mocking**: boto3 stubber for S3Publisher tests
 - **CLI testing**: Click TestRunner for command validation
-- **Coverage**: 85%+ on core modules, skip heavy dependency modules in CI
+- **Coverage**: Requirement enforced by CI and pre-push hooks
 
 ## 🔧 **Development Patterns**
 

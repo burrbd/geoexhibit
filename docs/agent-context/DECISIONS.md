@@ -90,7 +90,7 @@ This document records numbered implementation decisions with rationale and links
 - Enforces green CI discipline without being overly intrusive
 - Uses GitHub API for reliable status checking
 
-**Implementation**: [`ci_gate.py`](ci_gate.py) + [`.git/hooks/pre-commit`](.git/hooks/pre-commit)  
+**Implementation**: Pre-commit and pre-push hooks in [`setup_dev.sh`](setup_dev.sh)  
 **Commit**: [525873e](https://github.com/burrbd/geoexhibit/commit/525873e)
 
 ## Decision 8: PMTiles for Vector Feature Overlay
@@ -145,18 +145,17 @@ This document records numbered implementation decisions with rationale and links
 **Implementation**: [`geoexhibit/cli.py:_discover_features_file`](geoexhibit/cli.py)  
 **Commit**: [d1a6854](https://github.com/burrbd/geoexhibit/commit/d1a6854)
 
-## Decision 12: Test Coverage Target of 95%+
+## Decision 12: Test Coverage Requirements
 
-**Decision**: Enforce 95% test coverage threshold with comprehensive testing strategy.
+**Decision**: Enforce test coverage threshold with comprehensive testing strategy.
 
 **Rationale**:
 - High confidence in code correctness for geospatial/raster operations
 - Prevents regressions in complex integration scenarios
 - Forces thoughtful API design (testable code)
-- 100% coverage on core modules (stac_writer, publisher) for critical paths
+- Coverage requirement defined by pre-push hook for consistency
 
-**Implementation**: [`pyproject.toml:pytest.ini_options`](pyproject.toml)  
-**Current Coverage**: 96%+ across all modules
+**Implementation**: [`pyproject.toml:pytest.ini_options`](pyproject.toml) and [`pre-push-hook.sh`](pre-push-hook.sh)
 
 ## Decision 13: Steel Thread End-to-End Testing Strategy
 
@@ -179,3 +178,43 @@ This document records numbered implementation decisions with rationale and links
 
 **Commit**: [Issue #3 implementation](https://github.com/burrbd/geoexhibit/pull/14)  
 **Commit**: [ebae30e](https://github.com/burrbd/geoexhibit/commit/ebae30e)
+
+## Decision 14: Plugin Architecture with Secure Auto-Discovery
+
+**Decision**: Implement plugin system with `@register()` decorator and controlled auto-discovery limited to safe sources only.
+
+**Rationale**:
+- Enables external analyzer development without heavy frameworks
+- `@register("name")` decorator provides simple, clear registration
+- Auto-discovery limited to `analyzers/` directory and setuptools entry points only
+- Security: Eliminated broad sys.path scanning to prevent malicious module imports
+- Performance: No filesystem scanning with generic patterns
+- Collision-free: Unique module naming prevents silent failures
+
+**Implementation**: [`geoexhibit/plugin_registry.py`](geoexhibit/plugin_registry.py)  
+**Security Features**: Removed `_scan_python_path()` to prevent security vulnerabilities  
+**Commit**: [GitHub Issue #4 implementation](https://github.com/burrbd/geoexhibit/issues/4)
+
+## Decision 15: London School TDD with SOLID Principles
+
+**Decision**: Enforce London School Test-Driven Development methodology with strict adherence to SOLID principles.
+
+**Rationale**:
+- **London School TDD**: Focus on behavior and inputs/outputs, not implementation details
+- **Mock collaborators**: Isolate components by mocking all external dependencies  
+- **Test contracts**: Verify what components do, not how they do it
+- **SOLID principles**: Ensure maintainable, extensible architecture
+- **Coverage requirements**: Defined by pre-push hook, not documented percentages
+- **Fast, reliable tests**: Isolation prevents flaky tests and external dependencies
+
+**Testing Implementation**:
+- Unit tests use `unittest.mock.patch()` for all collaborators
+- Focus on behavior verification through mock interaction assertions
+- Test inputs → outputs, never internal state or implementation details
+
+**Architecture Implementation**:
+- Single Responsibility: Each class has one reason to change
+- Open/Closed: Plugin system exemplifies extension without modification
+- Dependency Inversion: Depend on `Analyzer` interface, not concrete classes
+
+**Patterns**: See `tests/test_publisher.py` for London School mocking examples
