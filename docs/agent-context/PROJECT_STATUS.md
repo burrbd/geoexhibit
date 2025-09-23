@@ -32,10 +32,10 @@ geoexhibit run config.json
 
 ### 5. ✅ Green CI Gate  
 **Status: COMPLETE** ✅
-- GitHub Actions CI passing with black, ruff, pytest, 80%+ coverage
+- GitHub Actions CI passing with black, ruff, pytest, coverage requirements met
 - CI gate checker verifies latest workflow success via GitHub API  
 - 40+ commits following commit discipline with frequent pushes
-- **Implementation**: [`ci_gate.py`](ci_gate.py) + [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
+- **Implementation**: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) + pre-commit/pre-push hooks
 - **Verification**: [CI Status](https://github.com/burrbd/geoexhibit/actions/runs/17659870835)
 
 ### 6. ✅ Idempotency & Repointing
@@ -91,7 +91,7 @@ geoexhibit run config.json
 ## 📊 **QUALITY METRICS**
 
 - **Commits**: 40+ total following commit discipline (one unit + test per commit)
-- **Test Coverage**: 85% on core modules (focused coverage on testable functionality)  
+- **Test Coverage**: Requirements enforced by CI and pre-push hooks  
 - **Code Quality**: All code passes black, ruff, mypy locally via pre-commit hooks
 - **CI Status**: ✅ GREEN - All linting, formatting, and core tests passing
 - **Documentation**: Complete README, DECISIONS.md, inline docstrings
@@ -114,7 +114,7 @@ geoexhibit/
 │   ├── stac_writer.py            # STAC creation with HREF enforcement
 │   ├── publisher.py              # S3 and local publishing
 │   └── pipeline.py               # Main pipeline orchestration
-├── tests/                        # Comprehensive test suite (96%+ coverage)
+├── tests/                        # Comprehensive test suite (coverage enforced by hooks)
 ├── web_scaffold/                 # Leaflet map with PMTiles + TiTiler
 ├── examples/                     # Configuration and data examples
 ├── .cursor/rules/                # Development rules for Cursor
@@ -134,7 +134,7 @@ The core acceptance criterion is **COMPLETE**:
 
 ## ✅ **CI STATUS: GREEN**
 
-- **GitHub Actions**: ✅ Passing (black, ruff, pytest with 80%+ coverage)  
+- **GitHub Actions**: ✅ Passing (black, ruff, pytest with coverage requirements met)  
 - **Local Quality**: All standards enforced via pre-commit hooks
 - **Core Tests**: 70+ tests passing in CI and locally
 - **Commit Discipline**: 40+ commits following proper discipline
