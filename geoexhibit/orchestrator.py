@@ -2,7 +2,7 @@
 
 from pathlib import Path
 from typing import Dict, Any, Optional
-from ulid import new as new_ulid  # type: ignore[import-not-found]
+from ulid import new as new_ulid
 
 from .analyzer import Analyzer
 from .config import GeoExhibitConfig
