@@ -15,7 +15,7 @@ from geoexhibit.analyzer import Analyzer, AnalyzerOutput, AssetSpec
 from geoexhibit.timespan import TimeSpan
 
 
-class TestAnalyzer(Analyzer):
+class SampleAnalyzer(Analyzer):
     """Test analyzer for registry testing."""
 
     def __init__(self, test_param: str = "default"):
@@ -88,10 +88,10 @@ def test_register_invalid_analyzer():
 def test_get_analyzer_success():
     """Test successful analyzer retrieval."""
     registry = AnalyzerRegistry()
-    registry.register("test")(TestAnalyzer)
+    registry.register("test")(SampleAnalyzer)
 
     analyzer = registry.get_analyzer("test", test_param="custom")
-    assert isinstance(analyzer, TestAnalyzer)
+    assert isinstance(analyzer, SampleAnalyzer)
     assert analyzer.test_param == "custom"
     assert analyzer.name == "test_analyzer"
 
@@ -99,7 +99,7 @@ def test_get_analyzer_success():
 def test_get_analyzer_not_found():
     """Test analyzer not found error."""
     registry = AnalyzerRegistry()
-    registry.register("test")(TestAnalyzer)
+    registry.register("test")(SampleAnalyzer)
 
     with pytest.raises(PluginNotFoundError, match="Analyzer 'nonexistent' not found"):
         registry.get_analyzer("nonexistent")
@@ -138,8 +138,8 @@ def test_get_analyzer_creation_failure():
 def test_list_analyzers():
     """Test listing registered analyzers."""
     registry = AnalyzerRegistry()
-    registry.register("test1")(TestAnalyzer)
-    registry.register("test2")(TestAnalyzer)
+    registry.register("test1")(SampleAnalyzer)
+    registry.register("test2")(SampleAnalyzer)
 
     analyzers = registry.list_analyzers()
     assert "test1" in analyzers
@@ -245,6 +245,7 @@ def test_plugin_validation():
 
 def test_demo_analyzer_registration():
     """Test that DemoAnalyzer is properly registered."""
+    from geoexhibit import demo_analyzer  # noqa: F401
 
     analyzers = list_analyzers()
     assert "demo" in analyzers
@@ -263,6 +264,7 @@ def test_example_analyzer_registration():
 
 def test_analyzer_interface_compliance():
     """Test that all registered analyzers comply with the interface."""
+    from geoexhibit import demo_analyzer  # noqa: F401
 
     analyzers = list_analyzers()
     for analyzer_name in analyzers:

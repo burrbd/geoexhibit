@@ -97,7 +97,7 @@ class AnalyzerRegistry:
                 )
 
     def _auto_discover_plugins(self) -> None:
-        """Auto-discover plugins from multiple sources."""
+        """Auto-discover plugins from safe, controlled sources only."""
         try:
             # 1. Look for analyzers/ directory in current working directory (local development)
             analyzers_dir = Path.cwd() / "analyzers"
@@ -108,8 +108,11 @@ class AnalyzerRegistry:
             # 2. Auto-discovery through entry points (pip-installed packages)
             self._discover_entry_points()
 
-            # 3. Scan for analyzer modules in Python path (fallback)
-            self._scan_python_path()
+            # Note: Removed _scan_python_path() due to security and performance concerns:
+            # - Broadly scanning sys.path with generic patterns is slow
+            # - Risk of importing unintended or malicious modules
+            # - Module name collisions cause silent failures
+            # Use entry points or explicit local analyzers/ directory instead
 
         except Exception as e:
             logger.warning(f"Plugin auto-discovery failed: {e}")
@@ -135,42 +138,32 @@ class AnalyzerRegistry:
             # pkg_resources not available, skip entry point discovery
             logger.debug("pkg_resources not available, skipping entry point discovery")
 
-    def _scan_python_path(self) -> None:
-        """Scan Python path for analyzer modules as fallback."""
-        for path in sys.path:
-            path_obj = Path(path)
-            # Look for analyzer modules in site-packages or other locations
-            for pattern in ["*analyzer*.py", "*_analyzer.py", "analyzer_*.py"]:
-                for py_file in path_obj.glob(pattern):
-                    if py_file.is_file() and not py_file.name.startswith("_"):
-                        try:
-                            self._import_module_from_file(py_file)
-                        except Exception as e:
-                            logger.debug(
-                                f"Failed to import analyzer module {py_file}: {e}"
-                            )
-
-    def _import_module_from_file(self, py_file: Path) -> None:
-        """Import a Python module from file path."""
-        module_name = f"analyzer_{py_file.stem}"
-        if module_name in sys.modules:
-            return  # Already imported
-
-        spec = importlib.util.spec_from_file_location(module_name, py_file)
-        if spec and spec.loader:
-            module = importlib.util.module_from_spec(spec)
-            sys.modules[module_name] = module
-            spec.loader.exec_module(module)
-            logger.debug(f"Imported analyzer module: {py_file}")
-
     def _scan_directory(self, directory: Path) -> None:
-        """Scan directory for Python modules and import them."""
+        """Scan directory for Python modules and import them with unique names."""
         for py_file in directory.glob("*.py"):
             if py_file.name.startswith("_"):
                 continue  # Skip private modules
 
             try:
-                self._import_module_from_file(py_file)
+                # Generate unique module name to prevent collisions
+                # Include full path hash to ensure uniqueness
+                path_hash = str(abs(hash(str(py_file))))
+                module_name = f"geoexhibit_plugin_{py_file.stem}_{path_hash}"
+
+                # Skip if already imported
+                if module_name in sys.modules:
+                    continue
+
+                # Import the module
+                spec = importlib.util.spec_from_file_location(module_name, py_file)
+                if spec and spec.loader:
+                    module = importlib.util.module_from_spec(spec)
+                    sys.modules[module_name] = module
+                    spec.loader.exec_module(module)
+                    logger.debug(
+                        f"Imported analyzer module: {py_file} as {module_name}"
+                    )
+
             except Exception as e:
                 logger.warning(f"Failed to import plugin {py_file}: {e}")
 
