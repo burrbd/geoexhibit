@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Simple steel thread test that mimics the web map sequence.
-Tests the exact same flow as described in docs/agent-context/AGENTS.md steel thread documentation.
+STAC to web map end-to-end test that verifies complete data display flow.
+Tests the exact sequence: STAC data → PMTiles → TileJSON → Raster tiles.
+Infrastructure-agnostic testing of the web map display workflow.
 """
 
 import sys

@@ -12,9 +12,9 @@ from geoexhibit.pipeline import (
 )
 
 
-def test_demo_workflow():
-    """Test the complete GeoExhibit workflow with demo data."""
-    print("🚀 Testing GeoExhibit Demo Workflow")
+def test_local_pipeline():
+    """Test the complete GeoExhibit pipeline with local output (no external deps)."""
+    print("🚀 Testing GeoExhibit Local Pipeline")
     print("=" * 50)
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -155,4 +155,4 @@ def test_demo_workflow():
 
 
 if __name__ == "__main__":
-    test_demo_workflow()
+    test_local_pipeline()
