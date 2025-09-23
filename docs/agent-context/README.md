@@ -22,19 +22,25 @@ This directory contains all documentation and tools specifically for AI agents w
   - `branch_create.sh` - Create feature branches
   - `Makefile` - Convenient command wrappers
 
-## 🚀 **AGENT ONBOARDING (START HERE)**
+## 🚀 **AGENT INTRODUCTION (START HERE)**
 
-**New agents MUST read this document first:**
+**For introducing NEW agents to GeoExhibit:**
 ```
-📖 AGENT_ONBOARDING.md - Complete meta-prompt with mandatory setup and guidelines
+📖 AGENT_META_PROMPT.md - Use this prompt to introduce agents to the codebase
 ```
 
-This meta-prompt ensures proper:
-- Technical architecture understanding
+**For agents already introduced, read this onboarding guide:**
+```  
+📖 AGENT_ONBOARDING.md - Complete guidelines with mandatory setup and testing methodology
+```
+
+This ensures proper:
+- London School TDD methodology understanding
+- SOLID principles adherence
 - Development environment setup  
-- Testing methodology (unit tests with mocks, coverage enforced by hooks)
-- Code quality standards adherence
-- GitHub workflow compliance
+- Coverage rules (never document percentages)
+- Code quality standards compliance
+- GitHub workflow understanding
 
 ## Additional Context Documents
 
