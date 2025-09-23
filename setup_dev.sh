@@ -17,21 +17,22 @@ if [ ! -d ".git/hooks" ]; then
     exit 1
 fi
 
+# Install pre-commit hook
+if [ -f "pre-commit-hook.sh" ]; then
+    cp pre-commit-hook.sh .git/hooks/pre-commit
+    chmod +x .git/hooks/pre-commit
+    echo "✅ Pre-commit hook installed (runs black, ruff, mypy)"
+else
+    echo "⚠️ pre-commit-hook.sh not found, skipping pre-commit hook installation"
+fi
+
 # Install pre-push hook
 if [ -f "pre-push-hook.sh" ]; then
     cp pre-push-hook.sh .git/hooks/pre-push
     chmod +x .git/hooks/pre-push
-    echo "✅ Pre-push hook installed and made executable"
+    echo "✅ Pre-push hook installed (runs unit tests with coverage)"
 else
     echo "⚠️ pre-push-hook.sh not found, skipping pre-push hook installation"
-fi
-
-# Pre-commit hook should already exist
-if [ -f ".git/hooks/pre-commit" ]; then
-    chmod +x .git/hooks/pre-commit
-    echo "✅ Pre-commit hook made executable"
-else
-    echo "⚠️ Pre-commit hook not found in .git/hooks/"
 fi
 
 # Initialize commit counter
@@ -51,7 +52,7 @@ echo "🎉 Development environment setup complete!"
 echo ""
 echo "📋 What this setup provides:"
 echo "  • Pre-commit hook that runs black, ruff, mypy before each commit"
-echo "  • Pre-push hook that runs test suite with coverage before each push"
+echo "  • Pre-push hook that runs unit tests with coverage before each push"
 echo "  • CI gate check every 4 commits"
 echo "  • Local development tools installed in ~/.local/bin"
 echo ""

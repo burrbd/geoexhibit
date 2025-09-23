@@ -1,7 +1,5 @@
 """Tests for the plugin registry system."""
 
-import tempfile
-from pathlib import Path
 from typing import Dict, Any
 import pytest
 
@@ -251,7 +249,6 @@ def test_plugin_validation():
 
 def test_demo_analyzer_registration():
     """Test that DemoAnalyzer is properly registered."""
-    from geoexhibit import demo_analyzer  # This should trigger registration
 
     analyzers = list_analyzers()
     assert "demo" in analyzers
@@ -263,14 +260,13 @@ def test_demo_analyzer_registration():
 def test_example_analyzer_registration():
     """Test that ExampleAnalyzer can be discovered from analyzers/ directory."""
     # This test verifies that our example plugin is discoverable
-    analyzers = list_analyzers()
+    list_analyzers()  # Trigger auto-discovery
     # Note: This may not pass in CI if the analyzers/ directory isn't in the Python path
     # but it demonstrates the discovery mechanism
 
 
 def test_analyzer_interface_compliance():
     """Test that all registered analyzers comply with the interface."""
-    from geoexhibit import demo_analyzer  # Ensure demo is registered
 
     analyzers = list_analyzers()
     for analyzer_name in analyzers:

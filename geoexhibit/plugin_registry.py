@@ -5,7 +5,7 @@ import importlib.util
 import inspect
 import logging
 from pathlib import Path
-from typing import Dict, Type, Optional, Any, List
+from typing import Dict, Type, Any, List, Callable
 import sys
 
 from .analyzer import Analyzer
@@ -20,7 +20,7 @@ class AnalyzerRegistry:
         self._analyzers: Dict[str, Type[Analyzer]] = {}
         self._auto_discovered: bool = False
 
-    def register(self, name: str) -> callable:
+    def register(self, name: str) -> Callable[[Type[Analyzer]], Type[Analyzer]]:
         """
         Decorator to register an analyzer plugin.
 
@@ -119,7 +119,7 @@ class AnalyzerRegistry:
     def _discover_entry_points(self) -> None:
         """Discover plugins through setuptools entry points."""
         try:
-            import pkg_resources
+            import pkg_resources  # type: ignore[import-not-found]
 
             for entry_point in pkg_resources.iter_entry_points("geoexhibit.analyzers"):
                 try:
@@ -191,7 +191,7 @@ class PluginValidationError(Exception):
 _registry = AnalyzerRegistry()
 
 
-def register(name: str) -> callable:
+def register(name: str) -> Callable[[Type[Analyzer]], Type[Analyzer]]:
     """Global decorator function for analyzer registration."""
     return _registry.register(name)
 
