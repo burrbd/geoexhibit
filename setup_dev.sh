@@ -7,6 +7,10 @@ echo "🔧 Setting up GeoExhibit development environment..."
 echo "📦 Installing development dependencies..."
 curl -s https://bootstrap.pypa.io/get-pip.py | python3 - --user --break-system-packages black ruff mypy pytest pytest-cov
 
+# Install GeoExhibit in development mode with all dependencies
+echo "📦 Installing GeoExhibit in development mode..."
+pip3 install --user --break-system-packages -e .
+
 # Add local bin to PATH in current session
 export PATH="$HOME/.local/bin:$PATH"
 

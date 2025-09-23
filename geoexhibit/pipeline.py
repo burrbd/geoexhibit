@@ -156,7 +156,7 @@ def validate_feature_collection(features: Dict[str, Any]) -> None:
 
 def ensure_feature_ids(features: Dict[str, Any]) -> None:
     """Ensure all features have a feature_id property using ULIDs."""
-    from ulid import new as new_ulid  # type: ignore[import-not-found]
+    from ulid import new as new_ulid
 
     for feature in features["features"]:
         props = feature.get("properties", {})
