@@ -5,11 +5,10 @@ import json
 import tempfile
 from pathlib import Path
 
-from geoexhibit.config import create_default_config
+from geoexhibit.config import create_default_config, validate_config
 from geoexhibit.pipeline import (
     create_example_features,
     run_geoexhibit_pipeline,
-    validate_config,
 )
 
 

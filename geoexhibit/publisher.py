@@ -353,9 +353,10 @@ class LocalPublisher(Publisher):
                     item.item_id, ""
                 ).rstrip("/")
                 asset_dir.mkdir(parents=True, exist_ok=True)
-                dest = self.output_dir / layout.asset_path(
-                    item.item_id, primary_asset.key
-                )
+                # Preserve original filename extension from source path
+                source_path = Path(primary_asset.href)
+                dest_filename = f"{primary_asset.key}{source_path.suffix}"
+                dest = self.output_dir / layout.asset_path(item.item_id, dest_filename)
                 shutil.copy2(primary_asset.href, dest)
                 logger.debug(f"Copied {primary_asset.href} to {dest}")
 
@@ -375,8 +376,11 @@ class LocalPublisher(Publisher):
                                 item.item_id, ""
                             ).rstrip("/")
                             asset_dir.mkdir(parents=True, exist_ok=True)
+                            # Preserve original filename extension from source path
+                            source_path = Path(asset.href)
+                            dest_filename = f"{asset.key}{source_path.suffix}"
                             dest = self.output_dir / layout.asset_path(
-                                item.item_id, asset.key
+                                item.item_id, dest_filename
                             )
                         shutil.copy2(asset.href, dest)
                         logger.debug(f"Copied {asset.href} to {dest}")
