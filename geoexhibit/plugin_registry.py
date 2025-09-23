@@ -18,6 +18,7 @@ class AnalyzerRegistry:
 
     def __init__(self) -> None:
         self._analyzers: Dict[str, Type[Analyzer]] = {}
+        # Lazy auto-discovery: only scan for plugins when first needed
         self._auto_discovered: bool = False
 
     def register(self, name: str) -> Callable[[Type[Analyzer]], Type[Analyzer]]:
@@ -57,6 +58,7 @@ class AnalyzerRegistry:
             self._auto_discover_plugins()
 
         if name not in self._analyzers:
+            # User experience: provide actionable error with available options
             available = list(self._analyzers.keys())
             raise PluginNotFoundError(
                 f"Analyzer '{name}' not found. Available analyzers: {available}. "
@@ -88,7 +90,7 @@ class AnalyzerRegistry:
                 f"Analyzer '{name}' must inherit from Analyzer base class"
             )
 
-        # Check required abstract methods are implemented
+        # Interface compliance: ensure pipeline can call analyze() and access name
         required_methods = ["analyze", "name"]
         for method in required_methods:
             if not hasattr(cls, method):
@@ -99,20 +101,16 @@ class AnalyzerRegistry:
     def _auto_discover_plugins(self) -> None:
         """Auto-discover plugins from safe, controlled sources only."""
         try:
-            # 1. Look for analyzers/ directory in current working directory (local development)
+            # Local development: analyzers/ directory in current working directory
             analyzers_dir = Path.cwd() / "analyzers"
             if analyzers_dir.exists() and analyzers_dir.is_dir():
                 self._scan_directory(analyzers_dir)
                 logger.debug(f"Scanned local analyzers directory: {analyzers_dir}")
 
-            # 2. Auto-discovery through entry points (pip-installed packages)
+            # Pip packages: setuptools entry points for geoexhibit.analyzers group
             self._discover_entry_points()
 
-            # Note: Removed _scan_python_path() due to security and performance concerns:
-            # - Broadly scanning sys.path with generic patterns is slow
-            # - Risk of importing unintended or malicious modules
-            # - Module name collisions cause silent failures
-            # Use entry points or explicit local analyzers/ directory instead
+            # Security decision: NO sys.path scanning to prevent malicious imports
 
         except Exception as e:
             logger.warning(f"Plugin auto-discovery failed: {e}")
@@ -145,8 +143,8 @@ class AnalyzerRegistry:
                 continue  # Skip private modules
 
             try:
-                # Generate unique module name to prevent collisions
-                # Include full path hash to ensure uniqueness
+                # Collision prevention: unique module names using path hash
+                # Prevents silent failures when multiple plugins have same filename
                 path_hash = str(abs(hash(str(py_file))))
                 module_name = f"geoexhibit_plugin_{py_file.stem}_{path_hash}"
 
