@@ -32,7 +32,7 @@ fi
 echo "🔬 Running test suite with coverage..."
 
 # Try to run tests, but be more forgiving about missing dependencies
-if python3 -m pytest --cov=geoexhibit --cov-report=term-missing --cov-fail-under=80 -q 2>/tmp/pytest-error.log; then
+if python3 -m pytest --cov=geoexhibit --cov-report=term-missing --cov-fail-under=85 -q 2>/tmp/pytest-error.log; then
     echo -e "${GREEN}✅ All tests passed with sufficient coverage!${NC}"
 elif grep -q "ModuleNotFoundError\|ImportError" /tmp/pytest-error.log; then
     echo -e "${YELLOW}⚠️  Missing dependencies detected in test environment${NC}"
@@ -42,7 +42,7 @@ elif grep -q "ModuleNotFoundError\|ImportError" /tmp/pytest-error.log; then
     # Clean up temp file
     rm -f /tmp/pytest-error.log
 else
-    echo -e "${RED}❌ Tests failed or coverage below 80%. Fix tests before pushing.${NC}"
+    echo -e "${RED}❌ Tests failed or coverage below 85%. Fix tests before pushing.${NC}"
     echo -e "${YELLOW}💡 Run 'python3 -m pytest -v' for detailed test output${NC}"
     
     # Show recent error details
