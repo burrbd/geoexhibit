@@ -77,7 +77,9 @@ def test_local_publisher_publish_plan():
         item_file = output_dir / layout.item_path(plan.items[0].item_id)
         assert item_file.exists()
 
-        asset_file = output_dir / layout.asset_path(plan.items[0].item_id, "analysis")
+        asset_file = output_dir / layout.asset_path(
+            plan.items[0].item_id, "analysis.tif"
+        )
         assert asset_file.exists()
 
 
