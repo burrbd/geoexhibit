@@ -20,7 +20,7 @@ from geoexhibit import plugin_registry
 class ExampleAnalyzer(Analyzer):
     """
     Example custom analyzer for demonstration.
-    
+
     This analyzer generates a different synthetic pattern than DemoAnalyzer,
     showing how users can create their own analysis logic.
     """
@@ -38,8 +38,8 @@ class ExampleAnalyzer(Analyzer):
     def analyze(self, feature: Dict[str, Any], timespan: TimeSpan) -> AnalyzerOutput:
         """
         Analyze a feature and generate a custom COG with different pattern than demo.
-        
-        This example creates a radial gradient pattern instead of the cosine 
+
+        This example creates a radial gradient pattern instead of the cosine
         pattern used by DemoAnalyzer.
         """
         feature_id = feature["properties"].get("feature_id", "unknown")
@@ -148,7 +148,7 @@ class ExampleAnalyzer(Analyzer):
 
         # Create radial gradient with seasonal variation
         gradient_values = (1.0 - normalized_distances) * seasonal_factor
-        
+
         # Add some noise for realism
         noise = np.random.normal(0, 0.05, gradient_values.shape)
         data = gradient_values + noise

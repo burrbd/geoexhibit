@@ -38,7 +38,7 @@ def run_geoexhibit_pipeline(
 
     # Import demo_analyzer to ensure it's registered (backwards compatibility)
     from . import demo_analyzer  # noqa: F401
-    
+
     try:
         analyzer_name = config.analyzer_name
         analyzer = plugin_registry.get_analyzer(analyzer_name)

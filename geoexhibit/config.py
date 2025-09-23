@@ -56,14 +56,14 @@ class GeoExhibitConfig:
     def time_config(self) -> Dict[str, Any]:
         """Get time provider configuration."""
         return self.time
-    
+
     @property
     def analyzer_name(self) -> str:
         """Get analyzer name."""
         name = self.analyzer.get("name", "demo")
         assert isinstance(name, str)
         return name
-    
+
     @property
     def analyzer_config(self) -> Dict[str, Any]:
         """Get analyzer configuration."""
@@ -195,7 +195,7 @@ def _validate_analyzer_section(analyzer: Dict[str, Any]) -> None:
     """Validate analyzer configuration section and set defaults."""
     if "name" not in analyzer:
         analyzer["name"] = "demo"
-    
+
     # Additional validation can be added here for analyzer-specific parameters
     # For now, we just ensure the name is a string
     if not isinstance(analyzer["name"], str):
@@ -232,7 +232,5 @@ def create_default_config() -> Dict[str, Any]:
             "format": "auto",
             "tz": "UTC",
         },
-        "analyzer": {
-            "name": "demo"
-        },
+        "analyzer": {"name": "demo"},
     }
