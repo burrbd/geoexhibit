@@ -26,39 +26,37 @@ This directory contains all documentation and tools specifically for AI agents w
 
 **New agents MUST read this document first:**
 ```
-📖 AGENT_ONBOARDING.md - Complete meta-prompt with mandatory setup and guidelines
+📖 AGENTS.md - Complete agent guide with architecture, methodology, and setup
 ```
 
-This ensures proper:
-- London School TDD methodology understanding
-- SOLID principles adherence
-- Development environment setup  
-- Coverage rules (never document percentages)
-- Code quality standards compliance
-- GitHub workflow understanding
+This single comprehensive guide covers:
+- What GeoExhibit is (publish + exhibit workflow)
+- Technical architecture and component overview
+- Development methodology (London School TDD, SOLID principles)
+- Environment setup and critical implementation notes
+- GitHub workflow and API tools
+- Testing strategy and common pitfalls
+- Steel thread documentation (web map data flow)
 
-## Additional Context Documents
+## Supporting Context Documents
 
-After completing onboarding, reference these for specific needs:
+Reference these for specific needs:
 
-1. **`AGENTS.md`** - Complete technical architecture overview
-2. **`PROJECT_STATUS.md`** - Current completion status and quality metrics  
-3. **`DECISIONS.md`** - 13 numbered implementation decisions with rationale
-4. **`PLAYBOOK.md`** - GitHub API workflow guide
-5. **`ROADMAP.md`** - Development phases and issue dependencies
+1. **`PROJECT_STATUS.md`** - Current completion status and quality metrics  
+2. **`DECISIONS.md`** - Numbered implementation decisions with rationale
+3. **`PLAYBOOK.md`** - Detailed GitHub API workflow examples
+4. **`ROADMAP.md`** - Development phases and issue dependencies
 
 ## Usage
 
 ### For New Agents
 ```bash
-# Start here for complete project understanding
+# Start here for complete project understanding (single comprehensive guide)
 cat docs/agent-context/AGENTS.md
 
-# Check current status
-cat docs/agent-context/PROJECT_STATUS.md
-
-# Understand key decisions
-cat docs/agent-context/DECISIONS.md
+# Then reference these for specific context:
+cat docs/agent-context/PROJECT_STATUS.md  # Current completion state
+cat docs/agent-context/DECISIONS.md       # Implementation decisions
 ```
 
 ### For GitHub Integration
