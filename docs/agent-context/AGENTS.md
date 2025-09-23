@@ -697,43 +697,55 @@ When making significant changes:
 
 ## 🧪 **End-to-End Verification Tests (MANDATORY BEFORE MERGE)**
 
-**Before merging any issue/branch, run these verification tests to prevent regressions:**
+**After completing any feature implementation, run these verification tests in order and ensure proper cleanup:**
 
-### **1. Demo Workflow Test**
+### **1. Local Pipeline Regression Test**
 ```bash
-# Test complete pipeline with demo data (local)
-python3 demo/test_demo.py
+# Test core pipeline without external dependencies
+python3 demo/test_local_pipeline.py
 
 # Verifies: Feature loading → Analysis → STAC generation → Local publishing
-# Should complete without errors and produce valid STAC + COG outputs
+# Cleanup: Automatic (uses tempfile, self-cleaning)
+# Run: Always for any code changes (fast, no external deps)
 ```
 
 ### **2. AWS Publishing Verification** (if AWS configured)
 ```bash
-# Publish demo dataset and verify via AWS APIs
-geoexhibit run demo/config.json  # Outputs job_id like: 01K4XQ...
+# Set up AWS credentials
+export AWS_ACCESS_KEY_ID="..." AWS_SECRET_ACCESS_KEY="..." AWS_DEFAULT_REGION="..."
 
-# Verify published structure
+# Publish demo dataset and capture job_id
+geoexhibit run demo/config.json  # Note the job_id output: 01K4XQ...
+
+# Verify published structure via AWS APIs
 python3 demo/verify_aws_publishing.py demo/config.json <job_id>
 
+# Cleanup: Remove test artifacts after verification
+aws s3 rm --recursive s3://your-bucket/jobs/<job_id>/
+
 # Verifies: S3 structure, STAC compliance, TiTiler compatibility, PMTiles
+# Run: For changes affecting publishing, STAC generation, or canonical layout
 ```
 
-### **3. Steel Thread Test** (if infrastructure deployed)
+### **3. STAC → Web Map End-to-End Test** (if web infrastructure deployed)
 ```bash  
-# Test complete web map data flow through deployed infrastructure
-python3 demo/steel_thread_test.py https://YOUR_CLOUDFRONT_URL
+# Test complete STAC data to web map display flow
+python3 demo/test_stac_webmap_e2e.py https://YOUR_CLOUDFRONT_URL
 
-# Verifies: Collection loading, PMTiles, STAC Items, TiTiler, raster tiles
-# Tests exact same flow as web map users experience
+# Verifies: Collection loading, PMTiles vectors, STAC Items, TileJSON, raster tiles
+# Tests the exact data flow that web map users experience
+# Cleanup: No artifacts created (read-only verification)
+# Run: For changes affecting web map, TiTiler integration, or STAC structure
 ```
 
-### **When to Run Each Test:**
-- **test_demo.py**: Always run for any code changes (fast, no external deps)
-- **verify_aws_publishing.py**: Run for changes affecting publishing, STAC, or layout  
-- **steel_thread_test.py**: Run for changes affecting web map, TiTiler, or infrastructure
+### **🧹 Agent Testing Protocol:**
+1. **Complete your feature implementation** (code + unit tests)
+2. **Run verification tests** in order (1 → 2 → 3 as applicable)  
+3. **Ensure all tests pass** before proceeding
+4. **Clean up test artifacts** (especially AWS resources)
+5. **Only then** create/update PR for review
 
-**🚨 All end-to-end tests must pass before merging any branch.**
+**🚨 All verification tests must pass and artifacts cleaned up before merging any branch.**
 
 ## 📖 **Reference Documents**
 - **README.md**: User documentation + demo instructions + plugin development
