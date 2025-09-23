@@ -89,6 +89,28 @@ def test_s3_publisher_internal_state():  # ❌ DON'T DO THIS
 - **Interface Segregation**: Clients shouldn't depend on interfaces they don't use
 - **Dependency Inversion**: Depend on abstractions, not concretions (see `Analyzer` interface)
 
+### **Comments & Documentation Philosophy (CRITICAL)**
+**Comments are a code smell** - code should be self-documenting through:
+- **Clear naming**: Function/variable names that explain intent
+- **Good structure**: Logical organization and separation of concerns
+- **Well-designed interfaces**: Clean abstractions that are obvious to use
+
+**ONLY add comments for:**
+- **Unexpected code** that is unavoidable (workarounds, external API quirks)
+- **Decision context** where complexity/choices need explanation (security, performance)
+- **Business logic** that isn't obvious from code structure
+
+**NEVER add comments for:**
+- **What the code does** (should be obvious from naming)
+- **How the code works** (implementation details)
+- **Redundant explanations** of clear, well-named functions
+
+**Documentation strategy:**
+- **README**: Primary user documentation with examples
+- **Docstrings**: Module/public API documentation only
+- **Agent context**: Complete technical context for developers
+- **No separate documentation files** unless absolutely necessary
+
 ### **Code Quality Standards (ENFORCED BY HOOKS)**
 - **Black formatting**: Automatic via pre-commit hook
 - **Ruff linting**: Automatic via pre-commit hook  
@@ -200,6 +222,13 @@ def test_publisher_internal_state():
 - Document specific coverage percentages anywhere
 - Violate SOLID principles (create classes with multiple responsibilities)
 - Test HOW code works instead of WHAT it does
+
+### **❌ Don't Do (Comments & Documentation):**
+- Add comments explaining what/how code works (should be obvious from naming)
+- Create separate documentation files for features (use README)
+- Write redundant docstrings that repeat function names
+- Over-comment obvious or well-structured code
+- Document implementation details in comments
 
 ### **❌ Don't Do (Architecture):**
 - Modify the canonical layout or HREF rules
