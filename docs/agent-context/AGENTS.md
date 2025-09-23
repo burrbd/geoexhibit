@@ -126,13 +126,41 @@ s3://bucket/jobs/<job_id>/
 └── thumbs/<item_id>/*.png           # Optional thumbnails
 ```
 
-## 🧪 **Testing Strategy**
+## 🧪 **Testing Strategy (London School TDD)**
 
-- **Unit tests**: Each component tested in isolation with mocks
-- **Integration tests**: End-to-end workflow with LocalPublisher (no AWS)
+### **Methodology (MANDATORY)**
+- **London School TDD**: Focus on **behavior and inputs/outputs**, not implementation details
+- **Unit tests**: Each component tested **in isolation with mocks** of collaborators
+- **Mock all collaborators**: External services, dependencies, filesystem operations
+- **Test contracts**: Verify what components do, not how they do it
+- **Behavior verification**: Assert interactions with mocked collaborators
+
+### **Test Types**
+- **Unit tests**: Component isolation with comprehensive mocking
+- **Integration tests**: End-to-end workflow with LocalPublisher (minimal, clearly labeled)
 - **S3 mocking**: boto3 stubber for S3Publisher tests
 - **CLI testing**: Click TestRunner for command validation
-- **Coverage**: Requirement enforced by CI and pre-push hooks
+- **Coverage**: Requirement enforced by CI and pre-push hooks (never document percentages)
+
+### **Examples**
+```python
+# ✅ CORRECT: Test behavior, mock collaborators
+@patch('geoexhibit.publisher.boto3')
+def test_publisher_uploads_files(mock_boto3):
+    # Arrange: Mock dependencies
+    mock_client = Mock()
+    mock_boto3.client.return_value = mock_client
+    
+    # Act: Call the method
+    publisher.publish_plan(plan)
+    
+    # Assert: Verify behavior (what happened)
+    mock_client.upload_file.assert_called_with(expected_args)
+
+# ❌ WRONG: Test implementation details
+def test_publisher_internal_state():
+    assert publisher._upload_count == 0  # Don't test internal state
+```
 
 ## 🔧 **Development Patterns**
 
