@@ -284,11 +284,16 @@ class MyAnalyzer(Analyzer):
 
 ### Plugin Discovery
 
-GeoExhibit discovers plugins through multiple mechanisms:
+GeoExhibit discovers plugins through **secure, controlled mechanisms only**:
 
 1. **Local Development**: `analyzers/` directory in current working directory
-2. **Pip Packages**: Entry points in `setup.py` (advanced)
+2. **Pip Packages**: Entry points in `setup.py` using `geoexhibit.analyzers` group
 3. **Direct Import**: Any module that imports and registers analyzers
+
+**Security Note**: For safety and performance, GeoExhibit does **not** scan the entire Python path for analyzer modules. This prevents:
+- Accidental import of unintended or malicious modules
+- Performance degradation from broad filesystem scanning  
+- Module name collisions that cause silent failures
 
 For most users, simply importing your analyzer module (which happens when you run `geoexhibit run`) is sufficient.
 

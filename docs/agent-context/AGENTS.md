@@ -178,6 +178,39 @@ class Analyzer(ABC):
 4. **STAC Validation**: Requires `jsonschema` - make conditional for CI compatibility
 5. **AWS Regions**: Optional in config, passed to boto3 client creation
 
+## 🔧 **Development Environment Setup (CRITICAL)**
+
+**⚠️ NEVER add `# type: ignore[import-not-found]` for runtime dependencies!**
+
+### **Problem**: 
+MyPy fails on imports like `from ulid import new as new_ulid` because development environment lacks runtime dependencies.
+
+### **Correct Solution**:
+```bash
+# Install GeoExhibit in development mode (installs ALL dependencies)
+pip install -e .
+
+# Run development setup (includes above + hooks + linting tools)  
+./setup_dev.sh
+```
+
+### **Wrong Solution** ❌:
+```python
+from ulid import new as new_ulid  # type: ignore[import-not-found]  # DON'T DO THIS
+```
+
+### **Why This Matters**:
+- Runtime dependencies are declared in `pyproject.toml`
+- MyPy needs actual modules to do proper type checking
+- Type ignore comments mask real issues and pollute codebase
+- Development environment must match runtime environment
+
+### **Setup Verification**:
+```bash
+python3 -c "import ulid, pystac, boto3; print('✅ All deps available')"
+mypy geoexhibit  # Should pass without type ignore comments
+```
+
 ## 🎯 **Agent Context for GitHub Issues**
 
 ### **Working on Infrastructure (#2, #3)**
