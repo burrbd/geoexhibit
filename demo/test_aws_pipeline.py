@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""AWS verification script for published GeoExhibit demo dataset."""
+"""AWS pipeline test - verifies complete publish workflow with S3 integration."""
 
 import json
 import sys
@@ -12,15 +12,15 @@ from geoexhibit.config import load_config
 from geoexhibit.layout import CanonicalLayout
 
 
-def verify_aws_publishing(config_file: Path, job_id: str) -> None:
+def test_aws_pipeline(config_file: Path, job_id: str) -> bool:
     """
-    Verify that demo dataset was published correctly to S3 using AWS APIs.
+    Test AWS pipeline - verify that dataset was published correctly to S3 using AWS APIs.
 
     Args:
         config_file: Path to GeoExhibit configuration
         job_id: Job ID to verify
     """
-    print("🔍 AWS VERIFICATION: Verifying published demo dataset")
+    print("🔍 AWS PIPELINE TEST: Verifying published dataset")
     print("=" * 60)
 
     # Load configuration
@@ -249,7 +249,7 @@ def main():
         sys.exit(1)
 
     try:
-        success = verify_aws_publishing(config_file, job_id)
+        success = test_aws_pipeline(config_file, job_id)
         sys.exit(0 if success else 1)
     except Exception as e:
         print(f"❌ Verification failed: {e}")

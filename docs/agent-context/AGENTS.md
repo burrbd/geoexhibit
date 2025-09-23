@@ -709,7 +709,7 @@ python3 demo/test_local_pipeline.py
 # Run: Always for any code changes (fast, no external deps)
 ```
 
-### **2. AWS Publishing Verification** (if AWS configured)
+### **2. AWS Pipeline Test** (if AWS configured)
 ```bash
 # Set up AWS credentials
 export AWS_ACCESS_KEY_ID="..." AWS_SECRET_ACCESS_KEY="..." AWS_DEFAULT_REGION="..."
@@ -717,8 +717,8 @@ export AWS_ACCESS_KEY_ID="..." AWS_SECRET_ACCESS_KEY="..." AWS_DEFAULT_REGION=".
 # Publish demo dataset and capture job_id
 geoexhibit run demo/config.json  # Note the job_id output: 01K4XQ...
 
-# Verify published structure via AWS APIs
-python3 demo/verify_aws_publishing.py demo/config.json <job_id>
+# Test AWS pipeline with published data
+python3 demo/test_aws_pipeline.py demo/config.json <job_id>
 
 # Cleanup: Remove test artifacts after verification
 aws s3 rm --recursive s3://your-bucket/jobs/<job_id>/
