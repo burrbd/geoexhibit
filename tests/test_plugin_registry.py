@@ -235,16 +235,12 @@ def test_plugin_validation():
     """Test plugin validation enforcement."""
     registry = AnalyzerRegistry()
 
-    # Test missing abstract methods
-    with pytest.raises(PluginValidationError):
+    # Test class that doesn't inherit from Analyzer
+    with pytest.raises(PluginValidationError, match="must inherit from Analyzer"):
 
-        @registry.register("incomplete")
-        class IncompleteAnalyzer(Analyzer):
-            @property
-            def name(self) -> str:
-                return "incomplete"
-
-            # Missing analyze method
+        @registry.register("invalid")
+        class InvalidAnalyzer:
+            pass
 
 
 def test_demo_analyzer_registration():
