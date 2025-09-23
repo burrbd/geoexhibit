@@ -302,6 +302,69 @@ Each STAC Item designates a **primary COG asset** with roles `["data", "primary"
 }
 ```
 
+## 🔌 Custom Analyzers (Plugin System)
+
+Create your own analyzer plugins for custom geospatial analysis:
+
+### **Create Plugin Repository**
+```bash
+# 1. Create your repository
+git clone https://github.com/yourusername/my-fire-analyzers.git
+cd my-fire-analyzers
+
+# 2. Install GeoExhibit  
+echo "geoexhibit" > requirements.txt
+pip install -r requirements.txt
+
+# 3. Create your analyzer
+# my_analyzer.py
+from geoexhibit import plugin_registry
+from geoexhibit.analyzer import Analyzer, AnalyzerOutput, AssetSpec
+
+@plugin_registry.register("fire_severity")
+class FireSeverityAnalyzer(Analyzer):
+    @property
+    def name(self) -> str:
+        return "fire_severity_analyzer"
+    
+    def analyze(self, feature, timespan) -> AnalyzerOutput:
+        # Your custom analysis logic here
+        cog_path = self._generate_severity_cog(feature, timespan)
+        
+        return AnalyzerOutput(
+            primary_cog_asset=AssetSpec(
+                key="analysis",
+                href=str(cog_path),
+                title="Fire Severity Analysis",
+                roles=["data", "primary"]
+            )
+        )
+
+# 4. Configure to use your analyzer
+# config.json
+{
+  "analyzer": {"name": "fire_severity"},
+  // ... other config
+}
+
+# 5. Run your analysis
+geoexhibit run config.json
+```
+
+### **Local Development**
+```bash
+# Create analyzers/ directory in your project
+mkdir analyzers
+
+# Add your plugin file: analyzers/my_analyzer.py
+# Include @plugin_registry.register("name") decorator
+
+# Update config.json: "analyzer": {"name": "name"}
+geoexhibit run config.json
+```
+
+Plugins are auto-discovered from local `analyzers/` directories and pip-installed packages with entry points.
+
 ## 🗺️ Web Map Features
 
 The included web scaffold provides:
