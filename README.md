@@ -84,7 +84,7 @@ Two verification tools are provided to validate your published STAC data:
 ```bash
 # The pipeline outputs a job ID like: 01K4XQ0N2DB35WHWZCAK3H0WAT
 # Verify the complete S3 structure and STAC compliance:
-python demo/verify_aws_publishing.py demo/config.json <job_id>
+python demo/test_aws_pipeline.py demo/config.json <job_id>
 
 # This script checks:
 # ✅ STAC Collection exists and is valid
@@ -97,7 +97,7 @@ python demo/verify_aws_publishing.py demo/config.json <job_id>
 #### Infrastructure End-to-End Testing
 ```bash
 # After deploying infrastructure, test complete steel thread:
-python demo/steel_thread_test.py https://YOUR_CLOUDFRONT_URL
+python demo/test_stac_webmap_e2e.py https://YOUR_CLOUDFRONT_URL
 
 # This script validates:
 # ✅ STAC Collection loads via CloudFront
@@ -187,7 +187,7 @@ geoexhibit run demo/config.json --dry-run
 ```bash
 # The pipeline outputs a job ID like: 01K4XQ0N2DB35WHWZCAK3H0WAT
 # Use the verification tools (see Step 6 above for detailed instructions):
-python demo/verify_aws_publishing.py demo/config.json <job_id>
+python demo/test_aws_pipeline.py demo/config.json <job_id>
 ```
 
 ### Expected Output Structure
@@ -429,14 +429,14 @@ pytest tests/test_*.py    # Specific test files
 
 GeoExhibit provides two specialized verification tools located in the `demo/` directory:
 
-### AWS Publishing Verification (`demo/verify_aws_publishing.py`)
+### AWS Pipeline Test (`demo/test_aws_pipeline.py`)
 Validates STAC data published to S3 using AWS APIs:
 
 ```bash
-python demo/verify_aws_publishing.py <config_file> <job_id>
+python demo/test_aws_pipeline.py <config_file> <job_id>
 
 # Example:
-python demo/verify_aws_publishing.py demo/config.json 01K4XQ0N2DB35WHWZCAK3H0WAT
+python demo/test_aws_pipeline.py demo/config.json 01K4XQ0N2DB35WHWZCAK3H0WAT
 ```
 
 **What it checks:**
@@ -449,14 +449,14 @@ python demo/verify_aws_publishing.py demo/config.json 01K4XQ0N2DB35WHWZCAK3H0WAT
 
 **Requirements:** Configured AWS credentials with S3 read access
 
-### Infrastructure End-to-End Testing (`demo/steel_thread_test.py`)
+### STAC → Web Map End-to-End Test (`demo/test_stac_webmap_e2e.py`)
 Tests complete web map data flow through deployed infrastructure:
 
 ```bash
-python demo/steel_thread_test.py <cloudfront_url>
+python demo/test_stac_webmap_e2e.py <cloudfront_url>
 
 # Example:
-python demo/steel_thread_test.py https://d30uc1nx5aa6eq.cloudfront.net
+python demo/test_stac_webmap_e2e.py https://d30uc1nx5aa6eq.cloudfront.net
 ```
 
 **What it tests:**
