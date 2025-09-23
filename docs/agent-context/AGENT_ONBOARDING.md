@@ -258,8 +258,50 @@ def test_publisher_internal_state():
 1. **`AGENTS.md`** - Technical architecture + critical notes
 2. **`PROJECT_STATUS.md`** - Current completion state
 3. **`DECISIONS.md`** - Why things work the way they do
-4. **`PLAYBOOK.md`** - GitHub workflow (if working on issues)
+4. **`PLAYBOOK.md`** - **GitHub workflow (MANDATORY for issue-based work)**
 5. **`ROADMAP.md`** - Development phases (if planning new work)
+
+## 🐙 **GitHub Workflow (CRITICAL FOR MOST WORK)**
+
+**Most GeoExhibit development starts from GitHub issues.** The repository includes powerful API tools:
+
+### **Quick GitHub API Setup**
+```bash
+# Set up GitHub API access
+export GH_TOKEN="your_github_token"
+export GH_REPO="burrbd/geoexhibit"
+
+# Navigate to API tools
+cd docs/agent-context/agent_playbook/
+```
+
+### **Essential GitHub Commands**
+```bash
+# View an issue
+./gh_api.sh GET "/issues/4"
+
+# Create a branch for issue work
+make branch ISSUE=4 BRANCH="issue-4-plugin-architecture"
+
+# Create draft PR linking to issue  
+make pr BRANCH="issue-4-plugin-architecture" TITLE="feat: implement plugin architecture (closes #4)" BODY="Implements plugin system with @register decorator"
+
+# Fetch PR comments for review
+make comments PR=123
+
+# Respond to PR comments
+make comment PR=123 BODY="Fixed in commit abc123: addressed validation issue"
+```
+
+### **Standard Workflow Pattern**
+1. **Read issue** → understand goal and acceptance criteria
+2. **Create branch** → `issue-<number>-short-slug` naming
+3. **Implement** → code + tests satisfying ACs
+4. **Create draft PR** → links back to issue with `closes #123`
+5. **Respond to comments** → address feedback or reply
+6. **Merge** → when ACs complete and CI green
+
+**Read `PLAYBOOK.md` for complete workflow details and examples.**
 
 ## 🔧 **IMMEDIATE SETUP VERIFICATION**
 
@@ -278,9 +320,26 @@ git add README.md && git commit -m "test: verify hooks" --dry-run
 
 # 4. Run tests with proper coverage
 python3 -m pytest --cov=geoexhibit
+
+# 5. Test GitHub API access (if you have a token)
+cd docs/agent-context/agent_playbook/
+export GH_TOKEN="your_token" GH_REPO="burrbd/geoexhibit"
+./gh_api.sh GET "/issues" | head -20  # Should list recent issues
 ```
 
 If ANY of these fail, **fix the environment setup before writing code.**
+
+### **🎯 GitHub Workflow Verification**
+**Most agent work starts from GitHub issues.** Test the workflow tools:
+```bash
+cd docs/agent-context/agent_playbook/
+
+# View available commands
+make help
+
+# Example: View a specific issue (without token needed)
+curl -s "https://api.github.com/repos/burrbd/geoexhibit/issues/4" | head -20
+```
 
 ## 📖 **DOCUMENTATION MAINTENANCE**
 
@@ -313,7 +372,8 @@ When making significant changes:
 - ✅ Can run existing tests with coverage requirements met
 - ✅ Understand pipeline pattern and architectural constraints
 - ✅ Know how to write isolated unit tests with mocks
-- ✅ Familiar with GitHub workflow for issues/PRs
+- ✅ **Can use GitHub API tools** (view issues, create branches, PRs, comments)
+- ✅ **Familiar with issue → branch → PR → merge workflow**
 
 **Only start coding after achieving ALL success criteria above.**
 
