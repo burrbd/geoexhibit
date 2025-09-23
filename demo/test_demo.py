@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Demo script to test GeoExhibit end-to-end functionality."""
+"""Local pipeline regression test - verifies core functionality without external dependencies."""
 
 import json
 import tempfile
